@@ -1,0 +1,56 @@
+# === Xcode ===
+.DS_Store
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Derived data & build
+DerivedData/
+build/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# === Swift Package Manager ===
+.build/
+Packages/
+Package.resolved
+.swiftpm/xcode/package.xcworkspace/
+
+# === CocoaPods ===
+Pods/
+Podfile.lock
+
+# === Carthage ===
+Carthage/Build/
+
+# === Fastlane ===
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# === Code coverage ===
+*.gcno
+*.gcda
+
+# === Environment / secrets ===
+.env
+.env.*
+Secrets.plist
+
+# === Logs ===
+*.log
+
+# === Playgrounds ===
+timeline.xctimeline
+playground.xcworkspace
+
+# === SwiftLint / tools ===
+.swiftlint.yml
+.swiftlint.cache
+
+# === Temporary / backup files ===
+*~
+*.swp

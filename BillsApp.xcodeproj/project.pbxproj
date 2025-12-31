@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F3712FBC2F0526AC0074D0D1 /* .gitignore in Sources */ = {isa = PBXBuildFile; fileRef = F3712FBB2F0526A00074D0D1 /* .gitignore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F3D25DDB2F0286070079D418 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F3712FBB2F0526A00074D0D1 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		F3D25DCD2F0286070079D418 /* BillsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3D25DDA2F0286070079D418 /* BillsAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BillsAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3D25DE42F0286070079D418 /* BillsAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BillsAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -79,6 +84,7 @@
 				F3D25DDD2F0286070079D418 /* BillsAppTests */,
 				F3D25DE72F0286070079D418 /* BillsAppUITests */,
 				F3D25DCE2F0286070079D418 /* Products */,
+				F3712FBB2F0526A00074D0D1 /* .gitignore */,
 			);
 			sourceTree = "<group>";
 		};
@@ -236,6 +242,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3712FBC2F0526AC0074D0D1 /* .gitignore in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

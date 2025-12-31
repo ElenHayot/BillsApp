@@ -4,21 +4,16 @@
 //
 //  Created by Elen Hayot on 29/12/2025.
 //
-
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @EnvironmentObject var authVM: AuthViewModel
 
-#Preview {
-    ContentView()
+    var body: some View {
+        if authVM.isAuthenticated {
+            DashboardView()
+        } else {
+            LoginView()
+        }
+    }
 }
