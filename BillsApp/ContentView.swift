@@ -10,8 +10,8 @@ struct ContentView: View {
     @EnvironmentObject var authVM: AuthViewModel
 
     var body: some View {
-        if authVM.isAuthenticated {
-            DashboardView()
+        if let token = authVM.accessToken {
+            DashboardView(token: token)
         } else {
             LoginView()
         }

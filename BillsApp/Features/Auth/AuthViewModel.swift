@@ -13,6 +13,13 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var accessToken: String?
+    
+    init() {
+        if let savedToken = AuthStorage.shared.accessToken {
+            accessToken = savedToken
+            isAuthenticated = true
+        }
+    }
 
     func login(email: String, password: String) async {
         isLoading = true
@@ -24,6 +31,7 @@ class AuthViewModel: ObservableObject {
                 password: password
             )
             AuthStorage.shared.accessToken = response.accessToken
+            accessToken = response.accessToken
             isAuthenticated = true
 
         } catch {
@@ -34,6 +42,7 @@ class AuthViewModel: ObservableObject {
 
     func logout() {
         AuthStorage.shared.accessToken = nil
+        accessToken = nil
         isAuthenticated = false
         // delete refresh token du Keychain
     }
