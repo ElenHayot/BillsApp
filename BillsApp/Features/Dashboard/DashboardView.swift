@@ -7,11 +7,20 @@
 import SwiftUI
 
 struct DashboardView: View {
-    var body: some View {
-        Text("Dashboard")
-    }
-}
+    @StateObject private var vm = DashboardViewModel()
 
-#Preview {
-    DashboardView()
+    var body: some View {
+        VStack {
+            if let dashboard = vm.dashboard {
+                Text("Total: \(dashboard.globalStats.totalAmount) \(dashboard.currency)")
+            } else if vm.isLoading {
+                ProgressView()
+            } else {
+                Text("No data")
+            }
+        }
+        .task {
+            await vm.loadDashboard(year: Calendar.current.component(.year, from: Date()))
+        }
+    }
 }

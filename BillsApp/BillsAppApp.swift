@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct BillsAppApp: App {
-    @StateObject var authVM = AuthViewModel()
+    @StateObject private var authVM = AuthViewModel()
 
     var body: some Scene {
         WindowGroup {
