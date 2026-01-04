@@ -47,7 +47,7 @@ final class APIClient {
 extension APIClient {
     func login(email: String, password: String) async throws -> LoginResponse {
             var url = baseURL
-            url.append(path: "auth/login")
+            url.append(path: "auth/login/")
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"

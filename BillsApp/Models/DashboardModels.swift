@@ -45,14 +45,16 @@ struct DashboardGlobalStats: Decodable {
     }
 }
 
-struct DashboardCategoryStats: Decodable, Identifiable {
+struct DashboardCategoryStats: Decodable, Identifiable, Hashable {
     let id = UUID()
+    let categoryId: Int
     let categoryName: String
-    let categoryColor: String
+    let categoryColor: String   // ex: "#FF5733"
     let nbBills: Int
     let totalAmount: Decimal
 
     private enum CodingKeys: String, CodingKey {
+        case categoryId = "category_id"
         case categoryName = "category_name"
         case categoryColor = "category_color"
         case nbBills = "nb_bills"
@@ -61,6 +63,7 @@ struct DashboardCategoryStats: Decodable, Identifiable {
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        categoryId = try container.decode(Int.self, forKey: .categoryId)
         categoryName = try container.decode(String.self, forKey: .categoryName)
         categoryColor = try container.decode(String.self, forKey: .categoryColor)
         nbBills = try container.decode(Int.self, forKey: .nbBills)

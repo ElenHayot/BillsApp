@@ -19,7 +19,7 @@ class DashboardViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        guard let url = URL(string: "http://127.0.0.1:8000/api/v1/dashboard/") else {
+        guard let url = URL(string: "http://127.0.0.1:8000/api/v1/dashboard/?year=2025") else {
             errorMessage = "Invalid URL"
             isLoading = false
             return
@@ -38,7 +38,7 @@ class DashboardViewModel: ObservableObject {
                 return
             }
             
-            // ← AJOUTE CES LIGNES POUR DEBUGGER
+            // ← POUR DEBUGGER
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("📦 JSON reçu: \(jsonString)")
             }
