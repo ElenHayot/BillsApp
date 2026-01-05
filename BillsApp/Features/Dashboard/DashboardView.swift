@@ -10,7 +10,8 @@ struct DashboardView: View {
 
     @StateObject private var viewModel = DashboardViewModel()
     @State private var displayMode: DisplayMode = .pie
-    @State private var selectedCategory: DashboardCategoryStats?
+//    @State private var selectedCategory: DashboardCategoryStats?
+    @State private var navigationPath = NavigationPath()
 
     enum DisplayMode {
         case pie
@@ -20,7 +21,7 @@ struct DashboardView: View {
     let token: String
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             VStack {
                 if viewModel.isLoading {
                     ProgressView("Loading dashboard...")
@@ -59,7 +60,7 @@ struct DashboardView: View {
                                 categories: dashboard.byCategory,
                                 onCategorySelected: { category in
                                     print("🎯 Callback appelé pour: \(category.categoryName)")
-                                    selectedCategory = category
+                                    navigationPath.append(category)
                                 }
                             )
                         } else {
@@ -67,7 +68,7 @@ struct DashboardView: View {
                                 categories: dashboard.byCategory,
                                 onCategorySelected: { category in
                                     print("🎯 Callback appelé pour: \(category.categoryName)")
-                                    selectedCategory = category
+                                    navigationPath.append(category)
                                 }
                             )
                         }
@@ -81,17 +82,21 @@ struct DashboardView: View {
             .task {
                 await viewModel.loadDashboard(token: token)
             }
-            .navigationDestination(item: $selectedCategory) { category in
+            .navigationDestination(for: DashboardCategoryStats.self) { category in
                 BillsListView(
                     categoryId: category.categoryId,
                     categoryName: category.categoryName,
+                    categoryColor: category.categoryColor,
                     token: token,
                     year: viewModel.dashboard?.year ?? Calendar.current.component(.year, from: Date())
                 )
             }
-            .onChange(of: selectedCategory) { _, newValue in
-                print("Selected:", newValue?.categoryName ?? "nil")
+            .navigationDestination(for: Bill.self) { bill in
+                BillDetailView(bill: bill, token: token)
             }
+//            .onChange(of: selectedCategory) { _, newValue in
+//                print("Selected:", newValue?.categoryName ?? "nil")
+//            }
         }
     }
 }

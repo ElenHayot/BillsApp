@@ -10,6 +10,7 @@ struct BillsListView: View {
 
     let categoryId: Int
     let categoryName: String
+    let categoryColor: String
     let token: String
     let year: Int
 
@@ -35,7 +36,12 @@ struct BillsListView: View {
             }
             else {
                 List(viewModel.bills) { bill in
-                    BillRowView(bill: bill)
+                    NavigationLink(value: bill) {
+                        BillRowView(
+                            bill: bill,
+                            categoryColor: categoryColor
+                        )
+                    }
                 }
             }
         }
@@ -49,4 +55,5 @@ struct BillsListView: View {
         }
     }
 }
+
 

@@ -47,28 +47,28 @@ final class APIClient {
 extension APIClient {
     func login(email: String, password: String) async throws -> LoginResponse {
             var url = baseURL
-            url.append(path: "auth/login/")
+        url.append(path: "auth/login/")
 
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
-            let body = [
-                "username": email,
-                "password": password
-            ]
+        let body = [
+            "username": email,
+            "password": password
+        ]
 
-            request.httpBody = body
-                .map { "\($0.key)=\($0.value)" }
-                .joined(separator: "&")
-                .data(using: .utf8)
+        request.httpBody = body
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+            .data(using: .utf8)
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                throw URLError(.userAuthenticationRequired)
-            }
-
-            return try JSONDecoder().decode(LoginResponse.self, from: data)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.userAuthenticationRequired)
         }
+
+        return try JSONDecoder().decode(LoginResponse.self, from: data)
+    }
 }

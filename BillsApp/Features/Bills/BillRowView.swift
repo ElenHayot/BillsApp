@@ -9,21 +9,26 @@ import SwiftUI
 struct BillRowView: View {
 
     let bill: Bill
-
+    let categoryColor: String
+    
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            // Pastille couleur catégorie
+            Circle()
+                .fill(Color(hex: categoryColor))
+                .frame(width: 10, height: 10)
             VStack(alignment: .leading) {
                 Text(bill.title)
                     .font(.headline)
 
-                Text(bill.date.formatted(date: .abbreviated, time: .omitted))
+                Text(bill.dateFormatted)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Text(bill.amount, format: .currency(code: "EUR"))
+            Text(bill.amountFormatted)
                 .bold()
         }
         .padding(.vertical, 4)

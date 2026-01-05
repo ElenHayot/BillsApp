@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct Bill: Identifiable, Decodable {
+struct Bill: Identifiable, Decodable, Hashable {
     let id: Int
     let title: String
     let amount: Decimal
@@ -45,5 +45,17 @@ struct Bill: Identifiable, Decodable {
         } else {
             amount = 0
         }
+    }
+}
+
+extension Bill {
+    var amountFormatted: String {
+        "\(amount) \("EUR")"
+    }
+
+    var dateFormatted: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
     }
 }

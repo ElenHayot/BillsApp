@@ -38,4 +38,23 @@ final class BillsService {
 
         return try decoder.decode([Bill].self, from: data)
     }
+    
+    func deleteBill (token: String, billId: Int) async throws {
+        
+        var components = URLComponents(string: "http://127.0.0.1:8000/api/v1/bills/\(billId)/")!
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        guard (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
 }
