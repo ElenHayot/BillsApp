@@ -10,7 +10,6 @@ struct DashboardView: View {
 
     @StateObject private var viewModel = DashboardViewModel()
     @State private var displayMode: DisplayMode = .pie
-//    @State private var selectedCategory: DashboardCategoryStats?
     @State private var navigationPath = NavigationPath()
 
     enum DisplayMode {
@@ -33,20 +32,25 @@ struct DashboardView: View {
                 else if let dashboard = viewModel.dashboard {
 
                     VStack(alignment: .leading, spacing: 16) {
-
-                        Text("Dashboard \(dashboard.year)")
-                            .font(.title)
-
-                        Text("Total: \(dashboard.globalStats.totalAmountFormatted)")
-                            .font(.headline)
-
-//                        List(dashboard.byCategory, id: \.id) { category in
-//                            HStack {
-//                                Text(category.categoryName)
-//                                Spacer()
-//                                Text(category.totalAmountFormatted)
-//                            }
-//                        }
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Dashboard \(dashboard.year)")
+                                    .font(.title)
+                                
+                                Text("Total: \(dashboard.globalStats.totalAmountFormatted)")
+                                    .font(.headline)
+                            }
+                            
+                            Spacer()
+                            
+                            // ✅ Bouton pour accéder aux catégories
+                            Button {
+                                navigationPath.append("categories")
+                            } label: {
+                                Image(systemName: "tag.fill")
+                                    .font(.title2)
+                            }
+                        }
 
                         Picker("Display mode", selection: $displayMode) {
                             Text("Camembert").tag(DisplayMode.pie)
@@ -91,13 +95,11 @@ struct DashboardView: View {
                     year: viewModel.dashboard?.year ?? Calendar.current.component(.year, from: Date())
                 )
             }
-            .navigationDestination(for: Bill.self) { bill in
-                BillDetailView(bill: bill, token: token)
+            .navigationDestination(for: String.self) { destination in
+                if destination == "categories" {
+                    CategoriesListView(token: token)
+                }
             }
-//            .onChange(of: selectedCategory) { _, newValue in
-//                print("Selected:", newValue?.categoryName ?? "nil")
-//            }
         }
     }
 }
-

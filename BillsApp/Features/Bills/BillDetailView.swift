@@ -12,9 +12,12 @@ struct BillDetailView: View {
 
     let bill: Bill
     let token: String
+    
+    // ✅ Récupère le viewModel de la liste
+    @EnvironmentObject private var listViewModel: BillsListViewModel
+    @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel = BillDetailViewModel()
-    @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirmation = false
 
     var body: some View {
@@ -30,7 +33,6 @@ struct BillDetailView: View {
             Divider()
 
             infoRow(label: "Date", value: bill.dateFormatted)
-//            infoRow(label: "Category", value: bill.categoryName)
 
             if let comment = bill.comment, !comment.isEmpty {
                 Divider()
@@ -41,7 +43,6 @@ struct BillDetailView: View {
 
             Spacer()
 
-            // 🗑 Delete
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {
@@ -54,7 +55,6 @@ struct BillDetailView: View {
         }
         .padding()
         .navigationTitle("Bill")
-//        .navigationBarTitleDisplayMode(.inline)
         .alert("Delete this bill?", isPresented: $showDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 Task {
@@ -63,7 +63,12 @@ struct BillDetailView: View {
                         billId: bill.id
                     )
                     if success {
+                        print("✅ Suppression réussie, suppression locale pour bill \(bill.id)")
+                        // ✅ Supprime directement dans le viewModel
+                        listViewModel.bills.removeAll { $0.id == bill.id }
                         dismiss()
+                    } else {
+                        print("❌ Échec de la suppression")
                     }
                 }
             }

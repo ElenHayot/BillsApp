@@ -53,7 +53,10 @@ struct BillsListView: View {
                 year: year
             )
         }
+        // ✅ Passe le viewModel comme EnvironmentObject
+        .navigationDestination(for: Bill.self) { bill in
+            BillDetailView(bill: bill, token: token)
+                .environmentObject(viewModel)
+        }
     }
 }
-
-
