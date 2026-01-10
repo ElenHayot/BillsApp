@@ -35,7 +35,7 @@ final class CategoryService {
             throw URLError(.badServerResponse)
         }
         
-        guard httpResponse.statusCode == 200 else {
+        guard (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.init(rawValue: httpResponse.statusCode))
         }
         
@@ -74,7 +74,7 @@ final class CategoryService {
             throw URLError(.badServerResponse)
         }
         
-        guard httpResponse.statusCode == 201 else {
+        guard (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.init(rawValue: httpResponse.statusCode))
         }
         
@@ -87,10 +87,11 @@ final class CategoryService {
     func updateCategory(
         token: String,
         categoryId: Int,
+        categoryName: String,
         name: String,
         color: String
     ) async throws -> Category {
-        let urlString = "\(baseURL)/categories/\(categoryId)/"
+        let urlString = "\(baseURL)/categories/\(categoryName)/"
         
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
@@ -114,7 +115,7 @@ final class CategoryService {
             throw URLError(.badServerResponse)
         }
         
-        guard httpResponse.statusCode == 200 else {
+        guard (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.init(rawValue: httpResponse.statusCode))
         }
         
@@ -126,9 +127,10 @@ final class CategoryService {
     
     func deleteCategory(
         token: String,
-        categoryId: Int
+        categoryId: Int,
+        categoryName: String
     ) async throws {
-        let urlString = "\(baseURL)/categories/\(categoryId)/"
+        let urlString = "\(baseURL)/categories/\(categoryName)/"
         
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
@@ -144,7 +146,7 @@ final class CategoryService {
             throw URLError(.badServerResponse)
         }
         
-        guard httpResponse.statusCode == 204 else {
+        guard (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.init(rawValue: httpResponse.statusCode))
         }
     }

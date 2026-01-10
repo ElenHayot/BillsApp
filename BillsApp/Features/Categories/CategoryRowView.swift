@@ -10,6 +10,9 @@ import SwiftUI
 struct CategoryRowView: View {
     
     let category: Category
+    let token: String
+    let onEdit: () -> Void
+    let onDelete: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -22,6 +25,26 @@ struct CategoryRowView: View {
                 .font(.headline)
             
             Spacer()
+            
+            // Bouton éditer
+            Button {
+                onEdit()
+            } label: {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(.plain)
+            
+            // Bouton supprimer
+            Button {
+                onDelete()
+            } label: {
+                Image(systemName: "trash.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 8)
     }
