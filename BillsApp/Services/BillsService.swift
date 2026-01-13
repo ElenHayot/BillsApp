@@ -14,14 +14,38 @@ final class BillsService {
 
     // MARK: - Fetch all bills (without category filter)
 
-    func fetchAllBills(token: String, year: Int) async throws -> [BillWithCategory] {
+    func fetchAllBills(
+        token: String,
+        year: Int,
+        categoryId: Int? = nil,
+        minAmount: Decimal? = nil,
+        maxAmount: Decimal? = nil
+    ) async throws -> [BillWithCategory] {
         
         var components = URLComponents(string: "\(baseURL)/bills/")!
-        components.queryItems = [
-            .init(name: "year", value: "\(year)")
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "year", value: "\(year)")
         ]
         
-        var request = URLRequest(url: components.url!)
+        if let categoryId = categoryId {
+            queryItems.append(URLQueryItem(name: "category_id", value: "\(categoryId)"))
+        }
+        
+        if let minAmount = minAmount {
+            queryItems.append(URLQueryItem(name: "min_amount", value: "\(minAmount)"))
+        }
+        
+        if let maxAmount = maxAmount {
+            queryItems.append(URLQueryItem(name: "max_amount", value: "\(maxAmount)"))
+        }
+        
+        components.queryItems = queryItems
+        
+        guard let url = components.url else {
+            throw URLError(.badURL)
+        }
+        
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         

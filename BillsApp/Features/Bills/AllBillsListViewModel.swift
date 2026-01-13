@@ -13,17 +13,36 @@ import SwiftUI
 final class AllBillsListViewModel: ObservableObject {
     
     @Published var bills: [BillWithCategory] = []
+    @Published var categories: [Category] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private var categories: [Category] = []
-    
-    func loadBills(token: String, year: Int) async {
+    // Charge les bills avec filtres optionnels
+    func loadBills(
+        token: String,
+        year: Int,
+        categoryId: Int? = nil,
+        minAmount: Decimal? = nil,
+        maxAmount: Decimal? = nil
+    ) async {
         isLoading = true
         errorMessage = nil
         
         do {
-            bills = try await BillsService.shared.fetchAllBills(token: token, year: year)
+            // 1. Charge les catégories d'abord
+            categories = try await CategoriesService.shared.fetchCategories(token: token)
+            
+            // 2. Charge les bills avec filtres
+            let plainBills = try await BillsService.shared.fetchAllBills(
+                token: token,
+                year: year
+            )
+            
+            // 3. Associe chaque bill à sa couleur de catégorie
+            bills = plainBills.map { bill in
+                let categoryColor = categories.first(where: { $0.id == bill.categoryId })?.color
+                return BillWithCategory(bill: bill.bill, categoryColor: categoryColor)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -36,7 +55,7 @@ final class AllBillsListViewModel: ObservableObject {
     }
 }
 
-// ✅ Extension de Bill pour inclure la couleur de catégorie
+// Extension de Bill pour inclure la couleur de catégorie
 struct BillWithCategory: Identifiable {
     let bill: Bill
     let categoryColor: String?
