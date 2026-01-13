@@ -48,17 +48,13 @@ struct CategoriesListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if viewModel.categories.isEmpty {
-                VStack {
-                    Text("No categories")
-                        .foregroundColor(.secondary)
-                    
-                    Button("Create your first category") {
-                        showCreateForm = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .padding(.top)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(
+                    icon: "tag.slash",
+                    title: "Aucune catégorie",
+                    message: "Commence par créer au moins une catégorie pour organiser tes factures.",
+                    actionTitle: "Créer une catégorie",
+                    action: { showCreateForm = true }
+                )
             }
             else {
                 List(viewModel.categories) { category in
@@ -116,7 +112,7 @@ struct CategoriesListView: View {
     
     private func deleteCategory(_ category: Category) async {
         do {
-            try await CategoryService.shared.deleteCategory(
+            try await CategoriesService.shared.deleteCategory(
                 token: token,
                 categoryId: category.id,
                 categoryName: category.name

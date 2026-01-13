@@ -24,7 +24,7 @@ final class CategoryFormViewModel: ObservableObject {
         defer { isCreating = false }
         
         do {
-            let category = try await CategoryService.shared.createCategory(
+            let category = try await CategoriesService.shared.createCategory(
                 token: token,
                 name: name,
                 color: color

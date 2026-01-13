@@ -26,7 +26,7 @@ final class CategoryEditViewModel: ObservableObject {
         defer { isUpdating = false }
         
         do {
-            let category = try await CategoryService.shared.updateCategory(
+            let category = try await CategoriesService.shared.updateCategory(
                 token: token,
                 categoryId: categoryId,
                 categoryName: categoryName,

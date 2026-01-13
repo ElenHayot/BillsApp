@@ -10,6 +10,8 @@ struct BillRowView: View {
 
     let bill: Bill
     let categoryColor: String
+    let onEdit: () -> Void
+    let onDelete: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -30,6 +32,26 @@ struct BillRowView: View {
 
             Text(bill.amountFormatted)
                 .bold()
+            
+            // Bouton éditer
+            Button {
+                onEdit()
+            } label: {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(.plain)
+            
+            // Bouton supprimer
+            Button {
+                onDelete()
+            } label: {
+                Image(systemName: "trash.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 4)
     }

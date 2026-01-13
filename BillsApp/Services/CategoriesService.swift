@@ -7,9 +7,9 @@
 
 import Foundation
 
-final class CategoryService {
+final class CategoriesService {
     
-    static let shared = CategoryService()
+    static let shared = CategoriesService()
     
     private init() {}
     

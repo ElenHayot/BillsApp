@@ -20,7 +20,7 @@ final class CategoriesViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            categories = try await CategoryService.shared.fetchCategories(token: token)
+            categories = try await CategoriesService.shared.fetchCategories(token: token)
         } catch {
             errorMessage = error.localizedDescription
         }
