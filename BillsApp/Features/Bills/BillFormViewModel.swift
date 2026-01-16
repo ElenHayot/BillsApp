@@ -16,12 +16,12 @@ final class BillFormViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var errorMessage: String?
     
-    func loadCategories(token: String) async {
+    func loadCategories() async {
         isLoading = true
         errorMessage = nil
         
         do {
-            categories = try await CategoriesService.shared.fetchCategories(token: token)
+            categories = try await APIClient.shared.fetchCategories()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -30,20 +30,18 @@ final class BillFormViewModel: ObservableObject {
     }
     
     func createBill(
-        token: String,
         title: String,
         amount: Decimal,
         date: Date,
         categoryId: Int,
-        comment: String?
+        comment: String
     ) async -> Bill? {
         
         isSaving = true
         defer { isSaving = false }
         
         do {
-            let bill = try await BillsService.shared.createBill(
-                token: token,
+            let bill = try await APIClient.shared.createBill(
                 title: title,
                 amount: amount,
                 date: date,
@@ -58,21 +56,21 @@ final class BillFormViewModel: ObservableObject {
     }
     
     func updateBill(
-        token: String,
         billId: Int,
-        title: String?,
-        amount: Decimal?,
-        date: Date?,
-        categoryId: Int?,
-        comment: String?
+        title: String,
+        amount: Decimal,
+        date: Date,
+        categoryId: Int,
+        comment: String
     ) async -> Bill? {
+        
+        print("bill ID: \(billId), title: \(title), amount: \(amount), date: \(date), categoryId: \(categoryId), comment: \(comment)")
         
         isSaving = true
         defer { isSaving = false }
         
         do {
-            let bill = try await BillsService.shared.updateBill(
-                token: token,
+            let bill = try await APIClient.shared.updateBill(
                 billId: billId,
                 title: title,
                 amount: amount,

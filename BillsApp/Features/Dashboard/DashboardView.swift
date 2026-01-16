@@ -8,18 +8,18 @@ import SwiftUI
 
 struct DashboardView: View {
 
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @State private var showLogoutConfirmation = false
+    
     @StateObject private var viewModel = DashboardViewModel()
     @State private var displayMode: DisplayMode = .pie
     @State private var navigationPath = NavigationPath()
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date()) //Année actuelle par défaut
 
-
     enum DisplayMode {
         case pie
         case bar
     }
-
-    let token: String
     
     // Génère une liste d'années (par exemple les 10 dernières années)
     private var availableYears: [Int] {
@@ -95,6 +95,29 @@ struct DashboardView: View {
                         }
                         .pickerStyle(.segmented)
                         .padding()
+                        .toolbar {
+                            ToolbarItem() {
+                                Button {
+                                    showLogoutConfirmation = true
+                                } label: {
+                                    Label("Déconnexion", systemImage: "rectangle.portrait.and.arrow.right")
+                                }
+                            }
+                        }
+                        .confirmationDialog(
+                            "Voulez-vous vraiment vous déconnecter ?",
+                            isPresented: $showLogoutConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Se déconnecter", role: .destructive) {
+                                authViewModel.logout()
+                                // ✨ Pas besoin de navigation manuelle !
+                                // isAuthenticated = false va automatiquement
+                                // afficher LoginView dans RootView
+                            }
+                            
+                            Button("Annuler", role: .cancel) {}
+                        }
 
                         if displayMode == .pie {
                             CategoryPieChartView(
@@ -121,19 +144,19 @@ struct DashboardView: View {
             }
             .padding()
             .task {
-                await viewModel.loadDashboard(token: token, year: selectedYear)
+                await viewModel.loadDashboard(year: selectedYear)
             }
             .onChange(of: selectedYear) { oldYear, newYear in
                 print("📅 Année changée: \(oldYear) → \(newYear)")
                 Task {
-                    await viewModel.loadDashboard(token: token, year: newYear)
+                    await viewModel.loadDashboard(year: newYear)
                 }
             }
             .onChange(of: navigationPath) { oldPath, newPath in
                 // Si on revient au dashboard (path devient vide)
                 if oldPath.count > 0 && newPath.isEmpty {
                     Task {
-                        await viewModel.loadDashboard(token: token, year: selectedYear)
+                        await viewModel.loadDashboard(year: selectedYear)
                     }
                 }
             }
@@ -142,16 +165,14 @@ struct DashboardView: View {
                     categoryId: category.categoryId,
                     categoryName: category.categoryName,
                     categoryColor: category.categoryColor,
-                    token: token,
                     year: selectedYear // ✅ Utilise l'année sélectionnée
                 )
             }
             .navigationDestination(for: String.self) { destination in
                 if destination == "categories" {
-                    CategoriesListView(token: token)
+                    CategoriesListView()
                 } else if destination == "all-bills" {
                     AllBillsListView(
-                        token: token,
                         year: selectedYear // ✅ Utilise l'année sélectionnée
                     )
                 }

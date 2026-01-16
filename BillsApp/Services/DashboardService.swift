@@ -46,3 +46,23 @@ final class DashboardService {
         return dashboard
     }
 }
+
+enum APIError: LocalizedError {
+    case network
+    case unauthorized
+    case server
+    case decoding
+
+    var errorDescription: String? {
+        switch self {
+        case .network:
+            return "Problème de connexion réseau"
+        case .unauthorized:
+            return "Session expirée"
+        case .server:
+            return "Erreur serveur"
+        case .decoding:
+            return "Erreur de données"
+        }
+    }
+}

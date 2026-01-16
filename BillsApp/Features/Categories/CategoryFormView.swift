@@ -9,7 +9,6 @@ import SwiftUI
 
 struct CategoryFormView: View {
     
-    let token: String
     let onCreated: (Category) -> Void
     
     @Environment(\.dismiss) private var dismiss
@@ -137,7 +136,6 @@ struct CategoryFormView: View {
     
     private func createCategory() async {
         let category = await viewModel.createCategory(
-            token: token,
             name: name,
             color: selectedColor
         )

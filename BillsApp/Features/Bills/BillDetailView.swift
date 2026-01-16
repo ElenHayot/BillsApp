@@ -11,9 +11,8 @@ import SwiftUI
 struct BillDetailView: View {
 
     let bill: Bill
-    let token: String
     
-    // ✅ Récupère le viewModel de la liste
+    // Récupère le viewModel de la liste
     @EnvironmentObject private var listViewModel: BillsListViewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -59,7 +58,6 @@ struct BillDetailView: View {
             Button("Delete", role: .destructive) {
                 Task {
                     let success = await viewModel.deleteBill(
-                        token: token,
                         billId: bill.id
                     )
                     if success {

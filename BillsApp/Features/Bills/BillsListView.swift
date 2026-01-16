@@ -11,7 +11,6 @@ struct BillsListView: View {
     let categoryId: Int
     let categoryName: String
     let categoryColor: String
-    let token: String
     @State private var selectedYear: Int
     @State private var minAmount: String = ""
     @State private var maxAmount: String = ""
@@ -53,11 +52,10 @@ struct BillsListView: View {
         return count
     }
     
-    init(categoryId: Int, categoryName: String, categoryColor: String, token: String, year: Int) {
+    init(categoryId: Int, categoryName: String, categoryColor: String, year: Int) {
         self.categoryId = categoryId
         self.categoryName = categoryName
         self.categoryColor = categoryColor
-        self.token = token
         _selectedYear = State(initialValue: year)
     }
 
@@ -165,8 +163,12 @@ struct BillsListView: View {
                 ProgressView("Loading bills…")
             }
             else if let error = viewModel.errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
+                ErrorView(
+                    message: error,
+                    retryAction: {
+                        Task { await viewModel.loadBills(categoryId: categoryId, year: selectedYear) }
+                    }
+                )
             }
             else if filteredBills.isEmpty {
                if activeFiltersCount > 0 {
@@ -211,8 +213,8 @@ struct BillsListView: View {
         }
         .padding()
         .task {
+            print("In BillsListView, selectedYear = \(selectedYear)")
             await viewModel.loadBills(
-                token: token,
                 categoryId: categoryId,
                 year: selectedYear
             )
@@ -221,26 +223,24 @@ struct BillsListView: View {
             print("📅 Année changée (\(categoryName)): \(oldYear) → \(newYear)")
             Task {
                 await viewModel.loadBills(
-                    token: token,
                     categoryId: categoryId,
                     year: newYear
                 )
             }
         }
         .navigationDestination(for: Bill.self) { bill in
-            BillDetailView(bill: bill, token: token)
+            BillDetailView(bill: bill)
                 .environmentObject(viewModel)
         }
         .sheet(isPresented: $showCreateForm) {
             BillFormView(
-                token: token,
                 defaultCategoryId: categoryId
             ) { newBill in
                 handleBillCreated(newBill)
             }
         }
         .sheet(item: $billToEdit) { bill in
-            BillFormView(token: token, bill: bill) { updatedBill in
+            BillFormView(bill: bill) { updatedBill in
                 handleBillUpdated(updatedBill)
             }
         }
@@ -271,7 +271,6 @@ struct BillsListView: View {
             // Catégorie différente → recharge la liste
             Task {
                 await viewModel.loadBills(
-                    token: token,
                     categoryId: categoryId,
                     year: selectedYear
                 )
@@ -290,7 +289,6 @@ struct BillsListView: View {
             // Catégorie changée → recharge la liste (la bill a disparu de cette catégorie)
             Task {
                 await viewModel.loadBills(
-                    token: token,
                     categoryId: categoryId,
                     year: selectedYear
                 )
@@ -299,16 +297,7 @@ struct BillsListView: View {
     }
     
     private func deleteBill(_ bill: Bill) async {
-        do {
-            try await BillsService.shared.deleteBill(
-                token: token,
-                billId: bill.id
-            )
-            // Supprime de la liste locale
-            viewModel.bills.removeAll { $0.id == bill.id }
-            billToDelete = nil
-        } catch {
-            viewModel.errorMessage = "Failed to delete bill: \(error.localizedDescription)"
-        }
+        await viewModel.deleteBill( billId: bill.id )
+        billToDelete = nil
     }
 }

@@ -9,7 +9,6 @@ import SwiftUI
 
 struct AllBillsListView: View {
     
-    let token: String
     @State private var selectedYear: Int
     @State private var selectedCategoryId: Int?
     @State private var minAmount: String = ""
@@ -58,8 +57,7 @@ struct AllBillsListView: View {
         return count
     }
     
-    init(token: String, year: Int) {
-        self.token = token
+    init(year: Int) {
         _selectedYear = State(initialValue: year)
     }
 
@@ -198,9 +196,12 @@ struct AllBillsListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if let error = viewModel.errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ErrorView(
+                    message: error,
+                    retryAction: {
+                        Task { await viewModel.loadBills(year: selectedYear) }
+                    }
+                )
             }
             else if viewModel.bills.isEmpty {
                 if activeFiltersCount > 0 {
@@ -217,8 +218,8 @@ struct AllBillsListView: View {
                     )
                 } else {
                     EmptyStateView(
-                        title: "Aucune facture",
-                        message: "Tu n’as encore aucune facture pour \(selectedYear).",
+                        title: "No bill yet",
+                        message: "You have no bill recorded for \(selectedYear).",
                         actionTitle: "Ajouter une facture",
                         action: {
                             showCreateForm = true
@@ -245,26 +246,26 @@ struct AllBillsListView: View {
             }
         }
         .task {
-            await viewModel.loadBills(token: token, year: selectedYear)
+            await viewModel.loadBills(year: selectedYear)
         }
         .onChange(of: selectedYear) { oldYear, newYear in
             print("📅 Année changée (All Bills): \(oldYear) → \(newYear)")
             Task {
-                await viewModel.loadBills(token: token, year: newYear)
+                await viewModel.loadBills(year: newYear)
             }
         }
         .navigationDestination(for: Bill.self) { bill in
-            BillDetailView(bill: bill, token: token)
+            BillDetailView(bill: bill)
                 .environmentObject(viewModel)
         }
         .sheet(isPresented: $showCreateForm) {
-            BillFormView(token: token) { newBill in
+            BillFormView() { newBill in
                 let categoryColor = viewModel.categoryColor(for: newBill.categoryId)
                 viewModel.bills.append(BillWithCategory(bill: newBill, categoryColor: categoryColor))
             }
         }
         .sheet(item: $billToEdit) { bill in
-            BillFormView(token: token, bill: bill) { updatedBill in
+            BillFormView(bill: bill) { updatedBill in
                 if let index = viewModel.bills.firstIndex(where: { $0.id == updatedBill.id }) {
                     let categoryColor = viewModel.categoryColor(for: updatedBill.categoryId)
                     viewModel.bills[index] = BillWithCategory(bill: updatedBill, categoryColor: categoryColor)
@@ -290,15 +291,7 @@ struct AllBillsListView: View {
     }
     
     private func deleteBill(_ bill: Bill) async {
-        do {
-            try await BillsService.shared.deleteBill(
-                token: token,
-                billId: bill.id
-            )
-            viewModel.bills.removeAll { $0.id == bill.id }
-            billToDelete = nil
-        } catch {
-            viewModel.errorMessage = "Failed to delete bill: \(error.localizedDescription)"
-        }
+        await viewModel.deleteBill(billId: bill.id)
+        billToDelete = nil
     }
 }

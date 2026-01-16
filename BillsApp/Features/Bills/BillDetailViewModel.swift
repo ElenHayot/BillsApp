@@ -15,7 +15,6 @@ final class BillDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     func deleteBill(
-        token: String,
         billId: Int
     ) async -> Bool {
 
@@ -23,8 +22,7 @@ final class BillDetailViewModel: ObservableObject {
         defer { isDeleting = false }
 
         do {
-            try await BillsService.shared.deleteBill(
-                token: token,
+            try await APIClient.shared.deleteBill(
                 billId: billId
             )
             return true

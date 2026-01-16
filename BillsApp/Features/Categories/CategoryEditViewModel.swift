@@ -15,8 +15,6 @@ final class CategoryEditViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     func updateCategory(
-        token: String,
-        categoryId: Int,
         categoryName: String,
         name: String,
         color: String
@@ -26,9 +24,7 @@ final class CategoryEditViewModel: ObservableObject {
         defer { isUpdating = false }
         
         do {
-            let category = try await CategoriesService.shared.updateCategory(
-                token: token,
-                categoryId: categoryId,
+            let category = try await APIClient.shared.updateCategory(
                 categoryName: categoryName,
                 name: name,
                 color: color

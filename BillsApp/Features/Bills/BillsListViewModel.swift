@@ -16,7 +16,6 @@ final class BillsListViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     func loadBills(
-        token: String,
         categoryId: Int,
         year: Int
     ) async {
@@ -25,8 +24,7 @@ final class BillsListViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            bills = try await BillsService.shared.fetchBills(
-                token: token,
+            bills = try await APIClient.shared.fetchBillsGroupedByCategory(
                 categoryId: categoryId,
                 year: year
             )
@@ -35,6 +33,18 @@ final class BillsListViewModel: ObservableObject {
         }
 
         isLoading = false
+    }
+    
+    func deleteBill(billId: Int) async {
+        do {
+            try await APIClient.shared.deleteBill(
+                billId: billId
+            )
+            // Supprime de la liste locale
+            bills.removeAll { $0.id == billId }
+        } catch {
+            errorMessage = "Failed to delete bill: \(error.localizedDescription)"
+        }
     }
 }
 

@@ -6,14 +6,34 @@
 //
 import SwiftUI
 
-struct ContentView: View {
-    @EnvironmentObject var authVM: AuthViewModel
+//struct ContentView: View {
+//    @EnvironmentObject var authVM: AuthViewModel
+//
+//    var body: some View {
+//        if let token = authVM.accessToken {
+//            DashboardView(token: token)
+//        } else {
+//            LoginView()
+//        }
+//    }
+//}
 
+// MARK: - Root View
+/// Vue racine qui décide quelle vue afficher selon l'état d'authentification
+struct ContentView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
     var body: some View {
-        if let token = authVM.accessToken {
-            DashboardView(token: token)
-        } else {
-            LoginView()
+        Group {
+            if authViewModel.isAuthenticated {
+                // Utilisateur connecté → Dashboard
+                DashboardView()
+            } else {
+                // Utilisateur non connecté → Login
+                LoginView()
+            }
         }
+        // Animation fluide lors du changement d'état
+        .animation(.easeInOut(duration: 0.3), value: authViewModel.isAuthenticated)
     }
 }

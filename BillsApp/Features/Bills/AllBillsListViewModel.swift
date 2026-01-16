@@ -16,12 +16,13 @@ final class AllBillsListViewModel: ObservableObject {
     @Published var categories: [Category] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var isDeleting: Bool = false
     
     // Charge les bills avec filtres optionnels
     func loadBills(
-        token: String,
         year: Int,
         categoryId: Int? = nil,
+        title: String? = nil,
         minAmount: Decimal? = nil,
         maxAmount: Decimal? = nil
     ) async {
@@ -30,17 +31,20 @@ final class AllBillsListViewModel: ObservableObject {
         
         do {
             // 1. Charge les catégories d'abord
-            categories = try await CategoriesService.shared.fetchCategories(token: token)
+            categories = try await APIClient.shared.fetchCategories()
             
             // 2. Charge les bills avec filtres
-            let plainBills = try await BillsService.shared.fetchAllBills(
-                token: token,
-                year: year
+            let plainBills = try await APIClient.shared.fetchAllBills(
+                year: year,
+                categoryId: categoryId,
+                title: title,
+                minAmount: minAmount,
+                maxAmount: maxAmount
             )
             
             // 3. Associe chaque bill à sa couleur de catégorie
             bills = plainBills.map { bill in
-                let categoryColor = categories.first(where: { $0.id == bill.categoryId })?.color
+                let categoryColor = categories.first(where: { $0.id == bill.bill.categoryId })?.color
                 return BillWithCategory(bill: bill.bill, categoryColor: categoryColor)
             }
         } catch {
@@ -48,6 +52,24 @@ final class AllBillsListViewModel: ObservableObject {
         }
         
         isLoading = false
+    }
+    
+    func deleteBill(
+        billId: Int
+    ) async {
+
+        isDeleting = true
+        defer { isDeleting = false }
+
+        do {
+            try await APIClient.shared.deleteBill(
+                billId: billId
+            )
+            bills.removeAll { $0.id == billId }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
     }
     
     func categoryColor(for categoryId: Int) -> String {

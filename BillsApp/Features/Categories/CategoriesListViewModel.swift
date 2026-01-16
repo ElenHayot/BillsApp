@@ -15,16 +15,28 @@ final class CategoriesViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    func loadCategories(token: String) async {
+    func loadCategories() async {
         isLoading = true
         errorMessage = nil
         
         do {
-            categories = try await CategoriesService.shared.fetchCategories(token: token)
+            categories = try await APIClient.shared.fetchCategories()
         } catch {
             errorMessage = error.localizedDescription
         }
         
         isLoading = false
+    }
+    
+    func deleteCategory(category: Category) async {
+        do {
+            try await APIClient.shared.deleteCategory(
+                categoryName: category.name
+            )
+            // Supprime de la liste locale
+            categories.removeAll { $0.id == category.id }
+        } catch {
+            errorMessage = "Failed to delete category: \(error.localizedDescription)"
+        }
     }
 }

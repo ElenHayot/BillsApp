@@ -22,6 +22,8 @@ struct BillRowView: View {
             VStack(alignment: .leading) {
                 Text(bill.title)
                     .font(.headline)
+                
+                Text(String(bill.id)).font(Font.caption.italic())
 
                 Text(bill.dateFormatted)
                     .font(.caption)

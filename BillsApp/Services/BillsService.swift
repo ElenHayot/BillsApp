@@ -73,7 +73,7 @@ final class BillsService {
     
     // MARK: - Fetch bills with category filter
     
-    func fetchBills(
+    func fetchBillsGroupedByCategory(
         token: String,
         categoryId: Int,
         year: Int

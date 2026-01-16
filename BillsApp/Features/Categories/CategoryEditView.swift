@@ -9,7 +9,6 @@ import SwiftUI
 
 struct CategoryEditView: View {
     let category: Category
-    let token: String
     let onUpdated: (Category) -> Void
     
     @Environment(\.dismiss) private var dismiss
@@ -28,9 +27,8 @@ struct CategoryEditView: View {
         "#F39C12", "#1ABC9C", "#34495E", "#95A5A6"
     ]
     
-    init(category: Category, token: String, onUpdated: @escaping (Category) -> Void){
+    init(category: Category, onUpdated: @escaping (Category) -> Void){
         self.category = category
-        self.token = token
         self.onUpdated = onUpdated
         
         // Initialise les states avec les valeurs actuelles
@@ -144,8 +142,6 @@ struct CategoryEditView: View {
     
     private func updateCategory() async {
         let updatedCategory = await viewModel.updateCategory(
-            token: token,
-            categoryId: category.id,
             categoryName: category.name,
             name: name,
             color: selectedColor

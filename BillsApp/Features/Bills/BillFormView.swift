@@ -9,7 +9,6 @@ import SwiftUI
 
 struct BillFormView: View {
     
-    let token: String
     let bill: Bill? // nil = création, non-nil = édition
     let defaultCategoryId: Int?
     let onSaved: (Bill) -> Void
@@ -23,8 +22,7 @@ struct BillFormView: View {
     @State private var selectedCategoryId: Int?
     @State private var comment: String
     
-    init(token: String, bill: Bill? = nil, defaultCategoryId: Int? = nil, onSaved: @escaping (Bill) -> Void) {
-        self.token = token
+    init(bill: Bill? = nil, defaultCategoryId: Int? = nil, onSaved: @escaping (Bill) -> Void) {
         self.bill = bill
         self.defaultCategoryId = defaultCategoryId
         self.onSaved = onSaved
@@ -35,6 +33,8 @@ struct BillFormView: View {
         _date = State(initialValue: bill?.date ?? Date())
         _selectedCategoryId = State(initialValue: bill?.categoryId ?? defaultCategoryId)
         _comment = State(initialValue: bill?.comment ?? "")
+        
+        print("Current bill ID: \(String(describing: bill?.id))")
     }
     
     var isEditing: Bool {
@@ -148,7 +148,7 @@ struct BillFormView: View {
         }
         .padding()
         .task {
-            await viewModel.loadCategories(token: token)
+            await viewModel.loadCategories()
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -177,23 +177,21 @@ struct BillFormView: View {
         if let existingBill = bill {
             // Édition
             savedBill = await viewModel.updateBill(
-                token: token,
                 billId: existingBill.id,
                 title: title,
                 amount: amountDecimal,
                 date: date,
                 categoryId: categoryId,
-                comment: comment.isEmpty ? nil : comment
+                comment: comment.isEmpty ? "" : comment
             )
         } else {
             // Création
             savedBill = await viewModel.createBill(
-                token: token,
                 title: title,
                 amount: amountDecimal,
                 date: date,
                 categoryId: categoryId,
-                comment: comment.isEmpty ? nil : comment
+                comment: comment.isEmpty ? "" : comment
             )
         }
         

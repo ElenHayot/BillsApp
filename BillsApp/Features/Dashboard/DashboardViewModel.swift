@@ -15,14 +15,13 @@ final class DashboardViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    func loadDashboard(token: String, year: Int? = nil) async { // ✅ year optionnel
+    func loadDashboard(year: Int) async { // ✅ year optionnel
         isLoading = true
         errorMessage = nil
         
         do {
-            dashboard = try await DashboardService.shared.fetchDashboard(
-                token: token,
-                year: year // ✅ Passe l'année au service
+            dashboard = try await APIClient.shared.getDashboard(
+                year: year
             )
         } catch {
             errorMessage = error.localizedDescription

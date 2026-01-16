@@ -69,18 +69,18 @@ struct EmptyStateView: View {
 }
 
 // ✅ Preview pour visualiser différents cas
-#Preview("With action") {
-    EmptyStateView(
-        icon: "tag.slash",
-        title: "Aucune catégorie",
-        message: "Commence par créer au moins une catégorie pour organiser tes factures.",
-        actionTitle: "Créer une catégorie",
-        action: {
-            print("Action!")
-        }
-    )
-}
-
+//#Preview("With action") {
+//    EmptyStateView(
+//        icon: "tag.slash",
+//        title: "Aucune catégorie",
+//        message: "Commence par créer au moins une catégorie pour organiser tes factures.",
+//        actionTitle: "Créer une catégorie",
+//        action: {
+//            print("Action!")
+//        }
+//    )
+//}
+//
 #Preview("Without action") {
     EmptyStateView(
         icon: "doc.text.magnifyingglass",
@@ -88,10 +88,10 @@ struct EmptyStateView: View {
         message: "Il n'y a pas encore de factures pour cette période."
     )
 }
-
-#Preview("Without icon") {
-    EmptyStateView(
-        title: "Aucun résultat",
-        message: "Essayez de modifier vos critères de recherche."
-    )
-}
+//
+//#Preview("Without icon") {
+//    EmptyStateView(
+//        title: "Aucun résultat",
+//        message: "Essayez de modifier vos critères de recherche."
+//    )
+//}

@@ -10,7 +10,6 @@ import SwiftUI
 struct CategoryRowView: View {
     
     let category: Category
-    let token: String
     let onEdit: () -> Void
     let onDelete: () -> Void
     

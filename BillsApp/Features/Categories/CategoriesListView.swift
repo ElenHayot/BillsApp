@@ -9,8 +9,6 @@ import SwiftUI
 
 struct CategoriesListView: View {
     
-    let token: String
-    
     @StateObject private var viewModel = CategoriesViewModel()
     @State private var showCreateForm = false
     @State private var categoryToEdit: Category?
@@ -43,9 +41,12 @@ struct CategoriesListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if let error = viewModel.errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ErrorView(
+                    message: error,
+                    retryAction: {
+                        Task { await viewModel.loadCategories() }
+                    }
+                )
             }
             else if viewModel.categories.isEmpty {
                 EmptyStateView(
@@ -60,7 +61,6 @@ struct CategoriesListView: View {
                 List(viewModel.categories) { category in
                     CategoryRowView(
                         category: category,
-                        token: token,
                         onEdit: {
                             categoryToEdit = category
                         },
@@ -73,18 +73,17 @@ struct CategoriesListView: View {
             }
         }
         .task {
-            await viewModel.loadCategories(token: token)
+            await viewModel.loadCategories()
         }
         .sheet(isPresented: $showCreateForm) {
-            CategoryFormView(token: token) { newCategory in
+            CategoryFormView() { newCategory in
                 // Ajoute la nouvelle catégorie à la liste
                 viewModel.categories.append(newCategory)
             }
         }
         .sheet(item: $categoryToEdit) { category in
             CategoryEditView(
-                category: category,
-                token: token
+                category: category
             ) { updatedCategory in
                 // Met à jour la catégorie dans la liste
                 if let index = viewModel.categories.firstIndex(where: { $0.id == updatedCategory.id }) {
@@ -111,17 +110,10 @@ struct CategoriesListView: View {
     }
     
     private func deleteCategory(_ category: Category) async {
-        do {
-            try await CategoriesService.shared.deleteCategory(
-                token: token,
-                categoryId: category.id,
-                categoryName: category.name
-            )
-            // Supprime de la liste locale
-            viewModel.categories.removeAll { $0.id == category.id }
-            categoryToDelete = nil
-        } catch {
-            viewModel.errorMessage = "Failed to delete category: \(error.localizedDescription)"
-        }
+        await viewModel.deleteCategory(
+            category: category
+        )
+        // Supprime de la liste locale
+        categoryToDelete = nil
     }
 }

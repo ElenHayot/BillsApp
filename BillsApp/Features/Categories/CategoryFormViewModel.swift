@@ -15,7 +15,6 @@ final class CategoryFormViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     func createCategory(
-        token: String,
         name: String,
         color: String
     ) async -> Category? {
@@ -24,8 +23,7 @@ final class CategoryFormViewModel: ObservableObject {
         defer { isCreating = false }
         
         do {
-            let category = try await CategoriesService.shared.createCategory(
-                token: token,
+            let category = try await APIClient.shared.createCategory(
                 name: name,
                 color: color
             )
