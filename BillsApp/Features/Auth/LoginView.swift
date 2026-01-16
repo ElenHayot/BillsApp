@@ -16,20 +16,20 @@ struct LoginView: View {
     var body: some View {
         VStack(spacing: 16) {
 
-            Text("Login")
+            Text("Connexion")
                 .font(.largeTitle)
             
             TextField("Email", text: $email)
                 .textFieldStyle(.roundedBorder)
 
-            SecureField("Password", text: $password)
+            SecureField("Mot de passe", text: $password)
                 .textFieldStyle(.roundedBorder)
 
             if authVM.isLoading {
                 ProgressView()
             }
 
-            Button("Login") {
+            Button("Connexion") {
                 Task {
                     await authVM.login(email: email, password: password)
                 }

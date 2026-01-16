@@ -66,7 +66,7 @@ struct BillsListView: View {
                    Text(categoryName)
                        .font(.largeTitle)
                    
-                   Picker("Year", selection: $selectedYear) {
+                   Picker("Année", selection: $selectedYear) {
                        ForEach(availableYears, id: \.self) { year in
                            Text("\(year)").tag(year)
                        }
@@ -113,14 +113,14 @@ struct BillsListView: View {
                     
                     Divider()
                     
-                    Text("Filters")
+                    Text("Filtres")
                         .font(.headline)
                         .padding(.horizontal)
                     
                     // Filtres par montant
                     HStack(spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Min amount")
+                            Text("Montant min")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -129,7 +129,7 @@ struct BillsListView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Max amount")
+                            Text("Montant max")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -145,7 +145,7 @@ struct BillsListView: View {
                             minAmount = ""
                             maxAmount = ""
                         } label: {
-                            Text("Reset filters")
+                            Text("Réinitialiser les filtres")
                                 .font(.caption)
                                 .foregroundColor(.red)
                         }
@@ -160,7 +160,7 @@ struct BillsListView: View {
 
 
             if viewModel.isLoading {
-                ProgressView("Loading bills…")
+                ProgressView("Chargement des factures…")
             }
             else if let error = viewModel.errorMessage {
                 ErrorView(
@@ -213,14 +213,12 @@ struct BillsListView: View {
         }
         .padding()
         .task {
-            print("In BillsListView, selectedYear = \(selectedYear)")
             await viewModel.loadBills(
                 categoryId: categoryId,
                 year: selectedYear
             )
         }
         .onChange(of: selectedYear) { oldYear, newYear in
-            print("📅 Année changée (\(categoryName)): \(oldYear) → \(newYear)")
             Task {
                 await viewModel.loadBills(
                     categoryId: categoryId,
@@ -244,20 +242,20 @@ struct BillsListView: View {
                 handleBillUpdated(updatedBill)
             }
         }
-        .alert("Delete this bill?", isPresented: $showDeleteConfirmation) {
-            Button("Delete", role: .destructive) {
+        .alert("Supprimer cette facture ?", isPresented: $showDeleteConfirmation) {
+            Button("Supprimer", role: .destructive) {
                 if let bill = billToDelete {
                     Task {
                         await deleteBill(bill)
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button("Annuler", role: .cancel) {
                 billToDelete = nil
             }
         } message: {
             if let bill = billToDelete {
-                Text("Are you sure you want to delete '\(bill.title)'?")
+                Text("Es-tu sûr de vouloir supprimer la facture '\(bill.title)' ?")
             }
         }
     }

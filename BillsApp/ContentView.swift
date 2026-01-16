@@ -6,18 +6,6 @@
 //
 import SwiftUI
 
-//struct ContentView: View {
-//    @EnvironmentObject var authVM: AuthViewModel
-//
-//    var body: some View {
-//        if let token = authVM.accessToken {
-//            DashboardView(token: token)
-//        } else {
-//            LoginView()
-//        }
-//    }
-//}
-
 // MARK: - Root View
 /// Vue racine qui décide quelle vue afficher selon l'état d'authentification
 struct ContentView: View {

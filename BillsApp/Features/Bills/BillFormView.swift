@@ -33,8 +33,6 @@ struct BillFormView: View {
         _date = State(initialValue: bill?.date ?? Date())
         _selectedCategoryId = State(initialValue: bill?.categoryId ?? defaultCategoryId)
         _comment = State(initialValue: bill?.comment ?? "")
-        
-        print("Current bill ID: \(String(describing: bill?.id))")
     }
     
     var isEditing: Bool {
@@ -44,28 +42,28 @@ struct BillFormView: View {
     var body: some View {
         VStack(spacing: 20) {
             
-            Text(isEditing ? "Edit Bill" : "New Bill")
+            Text(isEditing ? "Editer" : "Nouvelle facture")
                 .font(.largeTitle)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             if viewModel.isLoading {
-                ProgressView("Loading categories...")
+                ProgressView("Chargement des catégories...")
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         
                         // Titre
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Title")
+                            Text("Titre")
                                 .font(.headline)
                             
-                            TextField("Bill title", text: $title)
+                            TextField("Titre de la facture", text: $title)
                                 .textFieldStyle(.roundedBorder)
                         }
                         
                         // Montant
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Amount")
+                            Text("Montant")
                                 .font(.headline)
                             
                             TextField("0.00", text: $amount)
@@ -83,15 +81,15 @@ struct BillFormView: View {
                         
                         // Catégorie
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Category")
+                            Text("Catégorie")
                                 .font(.headline)
                             
                             if viewModel.categories.isEmpty {
-                                Text("No categories available")
+                                Text("Pas de catégorie disponible")
                                     .foregroundColor(.secondary)
                             } else {
-                                Picker("Select category", selection: $selectedCategoryId) {
-                                    Text("Select a category").tag(nil as Int?)
+                                Picker("Selectionner catégorie", selection: $selectedCategoryId) {
+                                    Text("Selectionne une catégorie").tag(nil as Int?)
                                     ForEach(viewModel.categories) { category in
                                         HStack(spacing: 8) {
                                             Circle()
@@ -108,7 +106,7 @@ struct BillFormView: View {
                         
                         // Commentaire
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Comment (optional)")
+                            Text("Commentaire (optionnel)")
                                 .font(.headline)
                             
                             TextEditor(text: $comment)
@@ -123,7 +121,7 @@ struct BillFormView: View {
                 
                 // Boutons d'action
                 HStack(spacing: 16) {
-                    Button("Cancel") {
+                    Button("Annuler") {
                         dismiss()
                     }
                     .buttonStyle(.bordered)
@@ -137,7 +135,7 @@ struct BillFormView: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text(isEditing ? "Save" : "Create")
+                            Text(isEditing ? "Sauvegarder" : "Créer")
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -150,7 +148,7 @@ struct BillFormView: View {
         .task {
             await viewModel.loadCategories()
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
             }

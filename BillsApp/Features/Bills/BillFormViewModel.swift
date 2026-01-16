@@ -64,8 +64,6 @@ final class BillFormViewModel: ObservableObject {
         comment: String
     ) async -> Bill? {
         
-        print("bill ID: \(billId), title: \(title), amount: \(amount), date: \(date), categoryId: \(categoryId), comment: \(comment)")
-        
         isSaving = true
         defer { isSaving = false }
         

@@ -18,7 +18,7 @@ struct CategoryBarChartView: View {
     var body: some View {
         Chart(categories) { category in
             BarMark(
-                x: .value("Category", category.categoryName),
+                x: .value("Catégorie", category.categoryName),
                 y: .value("Total", category.totalAmount)
             )
             .foregroundStyle(Color(hex: category.categoryColor))
@@ -32,12 +32,8 @@ struct CategoryBarChartView: View {
                     .fill(.clear)
                     .contentShape(Rectangle())
                     .onTapGesture { location in
-                        print("🖱️ Clic barre à: \(location)")
-                        
                         // Trouve la catégorie à cette position X
-                        if let categoryName: String = proxy.value(atX: location.x) {
-                            print("✅ Catégorie cliquée: \(categoryName)")
-                            
+                        if let categoryName: String = proxy.value(atX: location.x) {                            
                             if let category = categories.first(where: { $0.categoryName == categoryName }) {
                                 onCategorySelected(category)
                             }

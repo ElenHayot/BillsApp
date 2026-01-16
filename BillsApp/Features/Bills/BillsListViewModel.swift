@@ -43,7 +43,7 @@ final class BillsListViewModel: ObservableObject {
             // Supprime de la liste locale
             bills.removeAll { $0.id == billId }
         } catch {
-            errorMessage = "Failed to delete bill: \(error.localizedDescription)"
+            errorMessage = "Erreur lors de la suppression de la facture: \(error.localizedDescription)"
         }
     }
 }

@@ -35,7 +35,7 @@ struct BillDetailView: View {
 
             if let comment = bill.comment, !comment.isEmpty {
                 Divider()
-                Text("Comment")
+                Text("Commentaire")
                     .foregroundColor(.secondary)
                 Text(comment)
             }
@@ -48,14 +48,14 @@ struct BillDetailView: View {
                 if viewModel.isDeleting {
                     ProgressView()
                 } else {
-                    Text("Delete bill")
+                    Text("Supprimer la facture")
                 }
             }
         }
         .padding()
         .navigationTitle("Bill")
-        .alert("Delete this bill?", isPresented: $showDeleteConfirmation) {
-            Button("Delete", role: .destructive) {
+        .alert("Supprimer cette facture ?", isPresented: $showDeleteConfirmation) {
+            Button("Supprimer", role: .destructive) {
                 Task {
                     let success = await viewModel.deleteBill(
                         billId: bill.id
@@ -70,9 +70,9 @@ struct BillDetailView: View {
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {}
+            Button("Annuler", role: .cancel) {}
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
             }

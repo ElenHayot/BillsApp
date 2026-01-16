@@ -32,7 +32,7 @@ struct DashboardView: View {
         NavigationStack(path: $navigationPath) {
             VStack {
                 if viewModel.isLoading {
-                    ProgressView("Loading dashboard...")
+                    ProgressView("Chargement du dashboard...")
                 }
                 else if let error = viewModel.errorMessage {
                     Text(error)
@@ -57,7 +57,7 @@ struct DashboardView: View {
                                     Text("Dashboard")
                                         .font(.title)
                                     
-                                    Picker("Year", selection: $selectedYear) {
+                                    Picker("Année", selection: $selectedYear) {
                                         ForEach(availableYears, id: \.self) { year in
                                             Text("\(year)").tag(year)
                                         }
@@ -123,7 +123,6 @@ struct DashboardView: View {
                             CategoryPieChartView(
                                 categories: dashboard.byCategory,
                                 onCategorySelected: { category in
-                                    print("🎯 Callback appelé pour: \(category.categoryName)")
                                     navigationPath.append(category)
                                 }
                             )
@@ -131,7 +130,6 @@ struct DashboardView: View {
                             CategoryBarChartView(
                                 categories: dashboard.byCategory,
                                 onCategorySelected: { category in
-                                    print("🎯 Callback appelé pour: \(category.categoryName)")
                                     navigationPath.append(category)
                                 }
                             )
@@ -139,7 +137,7 @@ struct DashboardView: View {
                     }
                 }
                 else {
-                    Text("No data")
+                    Text("Pas de données")
                 }
             }
             .padding()
@@ -147,7 +145,6 @@ struct DashboardView: View {
                 await viewModel.loadDashboard(year: selectedYear)
             }
             .onChange(of: selectedYear) { oldYear, newYear in
-                print("📅 Année changée: \(oldYear) → \(newYear)")
                 Task {
                     await viewModel.loadDashboard(year: newYear)
                 }

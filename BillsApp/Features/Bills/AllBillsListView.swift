@@ -67,10 +67,10 @@ struct AllBillsListView: View {
             // Header avec titre et bouton "+"
             HStack {
                 HStack(spacing: 8) {
-                    Text("All Bills")
+                    Text("Toutes les factures")
                         .font(.largeTitle)
                     
-                    Picker("Year", selection: $selectedYear) {
+                    Picker("Année", selection: $selectedYear) {
                         ForEach(availableYears, id: \.self) { year in
                             Text("\(year)").tag(year)
                         }
@@ -117,23 +117,23 @@ struct AllBillsListView: View {
                     
                     Divider()
                     
-                    Text("Filters")
+                    Text("Filtres")
                         .font(.headline)
                         .padding(.horizontal)
                     
                     // Filtre par catégorie
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Category")
+                        Text("Catégorie")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
                         if viewModel.categories.isEmpty {
-                            Text("Loading categories...")
+                            Text("Chargement des catégories...")
                                 .foregroundColor(.secondary)
                                 .font(.caption)
                         } else {
-                            Picker("Category", selection: $selectedCategoryId) {
-                                Text("All categories").tag(nil as Int?)
+                            Picker("Catégorie", selection: $selectedCategoryId) {
+                                Text("Toutes les catégories").tag(nil as Int?)
                                 ForEach(viewModel.categories) { category in
                                     HStack(spacing: 8) {
                                         Circle()
@@ -152,7 +152,7 @@ struct AllBillsListView: View {
                     // Filtres par montant
                     HStack(spacing: 16){
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Min amount")
+                            Text("Montant min")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -161,7 +161,7 @@ struct AllBillsListView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Max amount")
+                            Text("Montant max")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -178,7 +178,7 @@ struct AllBillsListView: View {
                             minAmount = ""
                             maxAmount = ""
                         } label: {
-                            Text("Reset filters")
+                            Text("Réinitialiser les filtres")
                                 .font(.caption)
                                 .foregroundColor(.red)
                         }
@@ -192,7 +192,7 @@ struct AllBillsListView: View {
             }
 
             if viewModel.isLoading {
-                ProgressView("Loading bills…")
+                ProgressView("Chargement des factures…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if let error = viewModel.errorMessage {
@@ -218,8 +218,8 @@ struct AllBillsListView: View {
                     )
                 } else {
                     EmptyStateView(
-                        title: "No bill yet",
-                        message: "You have no bill recorded for \(selectedYear).",
+                        title: "Aucune facture",
+                        message: "Tu n'as pas encore de facture enregistrée pour \(selectedYear).",
                         actionTitle: "Ajouter une facture",
                         action: {
                             showCreateForm = true
@@ -272,20 +272,20 @@ struct AllBillsListView: View {
                 }
             }
         }
-        .alert("Delete this bill?", isPresented: $showDeleteConfirmation) {
-            Button("Delete", role: .destructive) {
+        .alert("Supprimer cette facture ?", isPresented: $showDeleteConfirmation) {
+            Button("Supprimer", role: .destructive) {
                 if let bill = billToDelete {
                     Task {
                         await deleteBill(bill)
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button("Annuler", role: .cancel) {
                 billToDelete = nil
             }
         } message: {
             if let bill = billToDelete {
-                Text("Are you sure you want to delete '\(bill.title)'?")
+                Text("Es-tu sûr de vouloir supprimer la facture '\(bill.title)'?")
             }
         }
     }
