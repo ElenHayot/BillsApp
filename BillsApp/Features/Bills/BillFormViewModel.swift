@@ -12,6 +12,7 @@ import Combine
 final class BillFormViewModel: ObservableObject {
     
     @Published var categories: [Category] = []
+    @Published var providers: [Provider] = []
     @Published var isLoading = false
     @Published var isSaving = false
     @Published var errorMessage: String?
@@ -29,11 +30,26 @@ final class BillFormViewModel: ObservableObject {
         isLoading = false
     }
     
+    func loadProviders() async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            providers = try await APIClient.shared.fetchProviders()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
+    
     func createBill(
         title: String,
         amount: Decimal,
         date: Date,
         categoryId: Int,
+        providerId: Int?,
+        providerName: String,
         comment: String
     ) async -> Bill? {
         
@@ -46,6 +62,8 @@ final class BillFormViewModel: ObservableObject {
                 amount: amount,
                 date: date,
                 categoryId: categoryId,
+                providerId: providerId,
+                providerName: providerName,
                 comment: comment
             )
             return bill
@@ -61,6 +79,8 @@ final class BillFormViewModel: ObservableObject {
         amount: Decimal,
         date: Date,
         categoryId: Int,
+        providerId: Int?,
+        providerName: String,
         comment: String
     ) async -> Bill? {
         
@@ -74,6 +94,8 @@ final class BillFormViewModel: ObservableObject {
                 amount: amount,
                 date: date,
                 categoryId: categoryId,
+                providerId: providerId,
+                providerName: providerName,
                 comment: comment
             )
             return bill

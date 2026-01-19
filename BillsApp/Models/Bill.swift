@@ -12,6 +12,8 @@ struct Bill: Identifiable, Decodable, Hashable {
     let amount: Decimal
     let date: Date
     let categoryId: Int
+    let providerId: Int?
+    let providerName: String?
     let comment: String?
     let createdAt: Date
     let updatedAt: Date
@@ -22,6 +24,8 @@ struct Bill: Identifiable, Decodable, Hashable {
         case amount = "amount"
         case date = "date"
         case categoryId = "category_id"
+        case providerId = "provider_id"
+        case providerName = "provider_name"
         case comment = "comment"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -33,6 +37,8 @@ struct Bill: Identifiable, Decodable, Hashable {
         title = try container.decode(String.self, forKey: .title)
         date = try container.decode(Date.self, forKey: .date)
         categoryId = try container.decode(Int.self, forKey: .categoryId)
+        providerId = try container.decodeIfPresent(Int.self, forKey: .providerId)
+        providerName = try container.decodeIfPresent(String.self, forKey: .providerName)
         comment = try container.decodeIfPresent(String.self, forKey: .comment)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)

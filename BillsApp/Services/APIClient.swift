@@ -374,6 +374,8 @@ final class APIClient {
         amount: Decimal,
         date: Date,
         categoryId: Int,
+        providerId: Int?,
+        providerName: String,
         comment: String
     ) async throws -> Bill {
         var url = baseURL
@@ -383,13 +385,17 @@ final class APIClient {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: String] = [
+        var body: [String: String] = [
             "title": title,
             "amount": NSDecimalNumber(decimal: amount).description,
             "date": ISO8601DateFormatter().string(from: date),
             "category_id": "\(categoryId)",
+            "provider_name": providerName,
             "comment": comment
         ]
+        if providerId != nil {
+            body["provider_id"] = "\(providerId!)"
+        }
         
         request.httpBody = try JSONEncoder().encode(body)
         return try await performRequest(request, responseType: Bill.self)
@@ -402,6 +408,8 @@ final class APIClient {
         amount: Decimal,
         date: Date,
         categoryId: Int,
+        providerId: Int?,
+        providerName: String,
         comment: String
     ) async throws -> Bill {
         var url = baseURL
@@ -411,13 +419,18 @@ final class APIClient {
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: String] = [
+        var body: [String: String] = [
             "title": title,
             "amount": NSDecimalNumber(decimal: amount).description,
             "date": ISO8601DateFormatter().string(from: date),
             "category_id": "\(categoryId)",
+            "provider_name": providerName,
             "comment": comment
         ]
+        
+        if providerId != nil {
+            body["provider_id"] = "\(providerId!)"
+        }
         
         request.httpBody = try JSONEncoder().encode(body)
         
@@ -430,6 +443,67 @@ final class APIClient {
         url.append(path: "bills/\(billId)/")
         
         var request = URLRequest(url : url)
+        request.httpMethod = "DELETE"
+        
+        try await performRequestWithoutResponse(_request: request)
+    }
+    
+    // MARK: - Providers
+    
+    /// Récupère toutes les  fournisseurs
+    func fetchProviders() async throws -> [Provider] {
+        var url = baseURL
+        url.append(path: "providers/")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        return try await performRequest(request, responseType: [Provider].self)
+    }
+    
+    /// Crée un nouveau fournisseur
+    func createProvider(name: String) async throws -> Provider {
+        var url = baseURL
+        url.append(path: "providers/")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: String] = [
+            "name": name
+        ]
+        
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        return try await performRequest(request, responseType: Provider.self)
+    }
+    
+    /// Met à jour un fournisseur
+    func updateProvider(providerId: Int, name: String) async throws -> Provider {
+        var url = baseURL
+        url.append(path: "providers/\(providerId)/")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: String] = [
+            "name": name
+        ]
+        
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        return try await performRequest(request, responseType: Provider.self)
+    }
+    
+    /// Supprime un fournisseur
+    func deleteProvider(providerId: Int) async throws {
+        var url = baseURL
+        url.append(path: "providers/\(providerId)/")
+        
+         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         
         try await performRequestWithoutResponse(_request: request)

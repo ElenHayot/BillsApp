@@ -87,6 +87,14 @@ struct DashboardView: View {
                                 Image(systemName: "tag.fill")
                                     .font(.title2)
                             }
+                            
+                            // ✅ Bouton pour accéder aux fournisseurs
+                            Button {
+                                navigationPath.append("providers")
+                            } label: {
+                                Image(systemName: "building.2")
+                                    .font(.title2)
+                            }
                         }
 
                         Picker("Display mode", selection: $displayMode) {
@@ -172,6 +180,8 @@ struct DashboardView: View {
                     AllBillsListView(
                         year: selectedYear // ✅ Utilise l'année sélectionnée
                     )
+                } else if destination == "providers" {
+                    ProvidersListView()
                 }
             }
         }

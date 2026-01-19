@@ -32,6 +32,18 @@ struct BillDetailView: View {
             Divider()
 
             infoRow(label: "Date", value: bill.dateFormatted)
+            
+            if bill.providerId != nil {
+                Divider()
+                Text("Fournisseur :")
+                    .foregroundColor(.secondary)
+                Text("\(String(bill.providerId!)) - \(bill.providerName ?? "Inconnu")")
+            } else {
+                Divider()
+                Text("Fournisseur :")
+                    .foregroundColor(.secondary)
+                Text("\(bill.providerName ?? "Fournisseur inconnu")")
+            }
 
             if let comment = bill.comment, !comment.isEmpty {
                 Divider()

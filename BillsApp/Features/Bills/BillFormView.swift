@@ -20,6 +20,8 @@ struct BillFormView: View {
     @State private var amount: String
     @State private var date: Date
     @State private var selectedCategoryId: Int?
+    @State private var selectedProviderId: Int?
+    @State private var providerName: String
     @State private var comment: String
     
     init(bill: Bill? = nil, defaultCategoryId: Int? = nil, onSaved: @escaping (Bill) -> Void) {
@@ -32,6 +34,8 @@ struct BillFormView: View {
         _amount = State(initialValue: bill != nil ? "\(bill!.amount)" : "")
         _date = State(initialValue: bill?.date ?? Date())
         _selectedCategoryId = State(initialValue: bill?.categoryId ?? defaultCategoryId)
+        _selectedProviderId = State(initialValue: bill?.providerId ?? nil as Int?)
+        _providerName = State(initialValue: bill?.providerName ?? "")
         _comment = State(initialValue: bill?.comment ?? "")
     }
     
@@ -47,7 +51,7 @@ struct BillFormView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             if viewModel.isLoading {
-                ProgressView("Chargement des catégories...")
+                ProgressView("Chargement des factures...")
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -104,6 +108,43 @@ struct BillFormView: View {
                             }
                         }
                         
+                        // Fournisseur
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Fournisseur (optionnel)")
+                                .font(.headline)
+                            
+                            if viewModel.providers.isEmpty {
+                                Text("Pas de fournisseur disponible")
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Picker("Selectionner fournisseur", selection: $selectedProviderId) {
+                                    Text("Selectionne un fournisseur").tag(nil as Int?)
+                                    ForEach(viewModel.providers) { provider in
+                                        HStack(spacing: 8) {
+                                            Text(String(provider.id))
+                                            Spacer()
+                                            Text(provider.name)
+                                        }
+                                        .tag(provider.id as Int?)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
+                        }
+                        
+                        /// Nom du fournisseur
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Nom du fournisseur (optionnel)")
+                                .font(.headline)
+                            
+                            TextEditor(text: $providerName)
+                                .frame(height: 100)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                        
                         // Commentaire
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Commentaire (optionnel)")
@@ -148,6 +189,9 @@ struct BillFormView: View {
         .task {
             await viewModel.loadCategories()
         }
+        .task {
+            await viewModel.loadProviders()
+        }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
@@ -166,7 +210,9 @@ struct BillFormView: View {
     
     private func saveBill() async {
         guard let amountDecimal = Decimal(string: amount),
-              let categoryId = selectedCategoryId else {
+              let categoryId = selectedCategoryId,
+              let providerId = selectedProviderId ?? nil as Int?
+        else {
             return
         }
         
@@ -180,6 +226,8 @@ struct BillFormView: View {
                 amount: amountDecimal,
                 date: date,
                 categoryId: categoryId,
+                providerId: providerId,
+                providerName: providerName.isEmpty ? "" : providerName,
                 comment: comment.isEmpty ? "" : comment
             )
         } else {
@@ -189,6 +237,8 @@ struct BillFormView: View {
                 amount: amountDecimal,
                 date: date,
                 categoryId: categoryId,
+                providerId: providerId,
+                providerName: providerName.isEmpty ? "" : providerName,
                 comment: comment.isEmpty ? "" : comment
             )
         }
