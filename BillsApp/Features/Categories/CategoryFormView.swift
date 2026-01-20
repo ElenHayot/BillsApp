@@ -19,6 +19,13 @@ struct CategoryFormView: View {
     @State private var selectedColor = "#FF5733"
     @State private var showColorPicker = false
     
+    // 🆕 Focus pour iOS (permet de gérer le clavier)
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case name
+    }
+    
     // Liste de couleurs prédéfinies
     private let availableColors = [
         "#FF5733", "#33FF57", "#3357FF", "#FF33F5",
@@ -152,8 +159,13 @@ struct CategoryFormView: View {
                     .font(.headline)
                 
                 TextField("Category name", text: $name)
+                    #if os(iOS)
                     .textFieldStyle(.roundedBorder)
-                    .padding(.horizontal, 4)
+                    .autocapitalization(.words)
+                    .focused($focusedField, equals: .name)
+                    #else
+                    .textFieldStyle(.roundedBorder)
+                    #endif
             }
         }
     }

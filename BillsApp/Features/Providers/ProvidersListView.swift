@@ -20,63 +20,11 @@ struct ProvidersListView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                   Text("Fournisseurs")
-                       .font(.largeTitle)
-               }
-                
-                Spacer()
-                
-                // Bouton créer
-                Button {
-                    showCreateForm = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top)
-            .padding(.bottom, 8)
-
-            if viewModel.isLoading {
-                ProgressView("Chargement des fournisseurs…")
-            }
-            else if let error = viewModel.errorMessage {
-                ErrorView(
-                    message: error,
-                    retryAction: {
-                        Task { await viewModel.loadProviders() }
-                    }
-                )
-            }
-            else if viewModel.providers.isEmpty {
-               EmptyStateView(
-                        icon: "doc.text",
-                        title: "Aucun fournisseur",
-                        message: "Tu n'as pas encore de fournisseur enregistré.",
-                        actionTitle: "Ajouter un fournisseur",
-                        action: {
-                            showCreateForm = true
-                        }
-                   )
-            } else {
-                List(viewModel.providers) { provider in
-                    NavigationLink(value: provider) {
-                        ProviderRowView(
-                            provider: provider,
-                            onEdit: {
-                                providerToEdit = provider
-                            },
-                            onDelete: {
-                                providerToDelete = provider
-                                showDeleteConfirmation = true
-                            }
-                        )
-                    }
-                }
-            }
+            // Header
+            headerView
+            
+            contentView
+            
         }
         .padding()
         .task {
@@ -113,6 +61,83 @@ struct ProvidersListView: View {
             }
         }
     }
+    
+    // MARK: - subviews
+    private var headerView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+               Text("Fournisseurs")
+                   .font(.largeTitle)
+           }
+            
+            Spacer()
+            
+            // Bouton créer
+            Button {
+                showCreateForm = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    #if os(iOS)
+                    .font(.title2)
+                    .frame(width: 44, height: 44)
+                    #else
+                    .font(.title2)
+                    #endif
+            }
+            #if os(iOS)
+            .buttonStyle(.borderless)
+            #endif
+        }
+        .padding(.horizontal)
+        .padding(.top)
+        .padding(.bottom, 8)
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.isLoading {
+            ProgressView("Chargement des fournisseurs…")
+        }
+        else if let error = viewModel.errorMessage {
+            ErrorView(
+                message: error,
+                retryAction: {
+                    Task { await viewModel.loadProviders() }
+                }
+            )
+        }
+        else if viewModel.providers.isEmpty {
+           EmptyStateView(
+                    icon: "doc.text",
+                    title: "Aucun fournisseur",
+                    message: "Tu n'as pas encore de fournisseur enregistré.",
+                    actionTitle: "Ajouter un fournisseur",
+                    action: {
+                        showCreateForm = true
+                    }
+               )
+        } else {
+            List(viewModel.providers) { provider in
+                NavigationLink(value: provider) {
+                    ProviderRowView(
+                        provider: provider,
+                        onEdit: {
+                            providerToEdit = provider
+                        },
+                        onDelete: {
+                            providerToDelete = provider
+                            showDeleteConfirmation = true
+                        }
+                    )
+                }
+            }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
+        }
+    }
+    
+    // MARK: - helpers
     
     // Gère la création - met à jour la liste
     private func handleProviderCreated(_ newProvider: Provider) {

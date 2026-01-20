@@ -11,7 +11,6 @@ import Combine
 @MainActor
 final class ProviderFormViewModel: ObservableObject {
     
-    @Published var isLoading = false
     @Published var isSaving = false
     @Published var errorMessage: String?
     

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 struct BillFormView: View {
     
@@ -23,6 +24,13 @@ struct BillFormView: View {
     @State private var selectedProviderId: Int?
     @State private var providerName: String
     @State private var comment: String
+    
+    // 🆕 Focus pour iOS (permet de gérer le clavier)
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case title, amount, providerName, comment
+    }
     
     init(bill: Bill? = nil, defaultCategoryId: Int? = nil, onSaved: @escaping (Bill) -> Void) {
         self.bill = bill

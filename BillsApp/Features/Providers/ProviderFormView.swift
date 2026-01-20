@@ -18,6 +18,13 @@ struct ProviderFormView: View {
     
     @State private var name: String
     
+    // 🆕 Focus pour iOS (permet de gérer le clavier)
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case name
+    }
+    
     init(provider: Provider? = nil, onSaved: @escaping (Provider) -> Void) {
         self.provider = provider
         self.onSaved = onSaved
@@ -31,53 +38,32 @@ struct ProviderFormView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            
-            Text(isEditing ? "Editer" : "Nouveau fournisseur")
-                .font(.largeTitle)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            if viewModel.isLoading {
-                ProgressView("Chargement des fournisseurs...")
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        
-                        // Titre
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Nom")
-                                .font(.headline)
-                            
-                            TextField("Nom du fournisseur", text: $name)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                    }
-                }
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text(isEditing ? "Editer" : "Nouveau fournisseur")
+                    .font(.largeTitle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                // Boutons d'action
-                HStack(spacing: 16) {
-                    Button("Annuler") {
-                        dismiss()
+                formContent
+                
+                actionButtons
+                
+            }
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Annuler") { dismiss() }
+                }
+                // Barre d'outils clavier iOS
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("OK") {
+                        focusedField = nil
                     }
-                    .buttonStyle(.bordered)
-                    
-                    Button {
-                        Task {
-                            await saveProvider()
-                        }
-                    } label: {
-                        if viewModel.isSaving {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text(isEditing ? "Sauvegarder" : "Créer")
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!isFormValid || viewModel.isSaving)
                 }
             }
+            #endif
         }
         .padding()
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
@@ -88,6 +74,59 @@ struct ProviderFormView: View {
             Text(viewModel.errorMessage ?? "")
         }
     }
+    
+    // MARK: - subviews
+    private var formContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                
+                // Titre
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Nom")
+                        .font(.headline)
+                    
+                    TextField("Nom du fournisseur", text: $name)
+                        #if os(iOS)
+                        .textFieldStyle(.roundedBorder)
+                        .autocapitalization(.words)
+                        .focused($focusedField, equals: .name)
+                        #else
+                        .textFieldStyle(.roundedBorder)
+                        #endif
+                }
+            }
+        }
+    }
+    
+    private var actionButtons: some View {
+        // Boutons d'action
+        HStack(spacing: 16) {
+            #if os(macOS)
+            Button("Annuler") {
+                dismiss()
+            }
+            .buttonStyle(.bordered)
+            #endif
+            
+            Button {
+                Task {
+                    await saveProvider()
+                }
+            } label: {
+                if viewModel.isSaving {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                } else {
+                    Text(isEditing ? "Sauvegarder" : "Créer")
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!isFormValid || viewModel.isSaving)
+        }
+    }
+    
+    // MARK: - helpers
     
     private var isFormValid: Bool {
         !name.isEmpty
