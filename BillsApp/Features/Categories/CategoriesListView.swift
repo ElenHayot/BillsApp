@@ -18,59 +18,11 @@ struct CategoriesListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             
-            // Header avec titre et bouton "+"
-            HStack {
-                Text("Categories")
-                    .font(.largeTitle)
-                
-                Spacer()
-                
-                Button {
-                    showCreateForm = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top)
-            .padding(.bottom, 8)
+            // Header
+            headerView
             
-            if viewModel.isLoading {
-                ProgressView("Loading categories…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            else if let error = viewModel.errorMessage {
-                ErrorView(
-                    message: error,
-                    retryAction: {
-                        Task { await viewModel.loadCategories() }
-                    }
-                )
-            }
-            else if viewModel.categories.isEmpty {
-                EmptyStateView(
-                    icon: "tag.slash",
-                    title: "Aucune catégorie",
-                    message: "Commence par créer au moins une catégorie pour organiser tes factures.",
-                    actionTitle: "Créer une catégorie",
-                    action: { showCreateForm = true }
-                )
-            }
-            else {
-                List(viewModel.categories) { category in
-                    CategoryRowView(
-                        category: category,
-                        onEdit: {
-                            categoryToEdit = category
-                        },
-                        onDelete: {
-                            categoryToDelete = category
-                            showDeleteConfirmation = true
-                        }
-                    )
-                }
-            }
+            // Contenu
+            contentView
         }
         .task {
             await viewModel.loadCategories()
@@ -82,7 +34,7 @@ struct CategoriesListView: View {
             }
         }
         .sheet(item: $categoryToEdit) { category in
-            CategoryEditView(
+            CategoryFormView(
                 category: category
             ) { updatedCategory in
                 // Met à jour la catégorie dans la liste
@@ -108,6 +60,81 @@ struct CategoriesListView: View {
             }
         }
     }
+    
+    // MARK: - subviews
+    
+    private var headerView: some View {
+        // Header avec titre et bouton "+"
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Categories")
+                    .font(.largeTitle)
+            }
+            Spacer()
+            
+            Button {
+                showCreateForm = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    #if os(iOS)
+                    .font(.title2)
+                    .frame(width: 44, height: 44)
+                    #else
+                    .font(.title2)
+                    #endif
+            }
+            #if os(iOS)
+            .buttonStyle(.borderless)
+            #endif
+        }
+        .padding(.horizontal)
+        .padding(.top)
+        .padding(.bottom, 8)
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.isLoading {
+            ProgressView("Loading categories…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        else if let error = viewModel.errorMessage {
+            ErrorView(
+                message: error,
+                retryAction: {
+                    Task { await viewModel.loadCategories() }
+                }
+            )
+        }
+        else if viewModel.categories.isEmpty {
+            EmptyStateView(
+                icon: "tag.slash",
+                title: "Aucune catégorie",
+                message: "Commence par créer au moins une catégorie pour organiser tes factures.",
+                actionTitle: "Créer une catégorie",
+                action: { showCreateForm = true }
+            )
+        }
+        else {
+            List(viewModel.categories) { category in
+                CategoryRowView(
+                    category: category,
+                    onEdit: {
+                        categoryToEdit = category
+                    },
+                    onDelete: {
+                        categoryToDelete = category
+                        showDeleteConfirmation = true
+                    }
+                )
+            }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
+        }
+    }
+    
+    // MARK: - helpers
     
     private func deleteCategory(_ category: Category) async {
         await viewModel.deleteCategory(

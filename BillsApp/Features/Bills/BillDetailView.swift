@@ -93,6 +93,8 @@ struct BillDetailView: View {
         }
     }
 
+    // MARK: - helpers
+    
     private func infoRow(label: String, value: String) -> some View {
         HStack {
             Text(label)

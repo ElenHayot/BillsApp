@@ -64,186 +64,16 @@ struct AllBillsListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             
-            // Header avec titre et bouton "+"
-            HStack {
-                HStack(spacing: 8) {
-                    Text("Toutes les factures")
-                        .font(.largeTitle)
-                    
-                    Picker("Année", selection: $selectedYear) {
-                        ForEach(availableYears, id: \.self) { year in
-                            Text("\(year)").tag(year)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                }
-                
-                Spacer()
-                
-                // Bouton pour afficher/masquer les filtres
-                Button {
-                    withAnimation {
-                        showFilters.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: showFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                        if activeFiltersCount > 0 {
-                            Text("\(activeFiltersCount)")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                        }
-                    }
-                    .font(.title2)
-                    .foregroundColor(activeFiltersCount > 0 ? .blue : .primary)
-                }
-                
-                // Bouton créer
-                Button {
-                    showCreateForm = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top)
-            .padding(.bottom, 8)
+            // Header
+            headerView
             
             // Section filtres (dépliable)
             if showFilters {
-                VStack(alignment: .leading, spacing: 12) {
-                    
-                    Divider()
-                    
-                    Text("Filtres")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    
-                    // Filtre par catégorie
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Catégorie")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        if viewModel.categories.isEmpty {
-                            Text("Chargement des catégories...")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
-                        } else {
-                            Picker("Catégorie", selection: $selectedCategoryId) {
-                                Text("Toutes les catégories").tag(nil as Int?)
-                                ForEach(viewModel.categories) { category in
-                                    HStack(spacing: 8) {
-                                        Circle()
-                                            .fill(Color(hex: category.color))
-                                            .frame(width: 12, height: 12)
-                                        Text(category.name)
-                                    }
-                                    .tag(category.id as Int?)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Filtres par montant
-                    HStack(spacing: 16){
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Montant min")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            TextField("0.00", text: $minAmount)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Montant max")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            TextField("0.00", text: $maxAmount)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Bouton pour réinitialiser les filtres
-                    if activeFiltersCount > 0 {
-                        Button {
-                            selectedCategoryId = nil
-                            minAmount = ""
-                            maxAmount = ""
-                        } label: {
-                            Text("Réinitialiser les filtres")
-                                .font(.caption)
-                                .foregroundColor(.red)
-                        }
-                        .padding(.horizontal)
-                    }
-                    
-                    Divider()
-                }
-                .padding(.bottom, 8)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                filtersView
             }
 
-            if viewModel.isLoading {
-                ProgressView("Chargement des factures…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            else if let error = viewModel.errorMessage {
-                ErrorView(
-                    message: error,
-                    retryAction: {
-                        Task { await viewModel.loadBills(year: selectedYear) }
-                    }
-                )
-            }
-            else if viewModel.bills.isEmpty {
-                if activeFiltersCount > 0 {
-                    EmptyStateView(
-                        icon: "magnifyingglass",
-                        title: "Aucun résultat",
-                        message: "Aucune facture ne correspond à tes critères de recherche.",
-                        actionTitle: "Réinitialiser les filtres",
-                        action: {
-                            selectedCategoryId = nil
-                            minAmount = ""
-                            maxAmount = ""
-                        }
-                    )
-                } else {
-                    EmptyStateView(
-                        title: "Aucune facture",
-                        message: "Tu n'as pas encore de facture enregistrée pour \(selectedYear).",
-                        actionTitle: "Ajouter une facture",
-                        action: {
-                            showCreateForm = true
-                        }
-                    )
-                }
-            }
-            else {
-                List(filteredBills) { bill in
-                    NavigationLink(value: bill.bill) {
-                        BillRowView(
-                            bill: bill.bill,
-                            categoryColor: bill.categoryColor ?? "#999999", // Couleur par défaut
-                            onEdit: {
-                                billToEdit = bill.bill
-                            },
-                            onDelete: {
-                                billToDelete = bill.bill
-                                showDeleteConfirmation = true
-                            }
-                        )
-                    }
-                }
-            }
+            // Contenu
+            contentView
         }
         .task {
             await viewModel.loadBills(year: selectedYear)
@@ -290,8 +120,228 @@ struct AllBillsListView: View {
         }
     }
     
+    // MARK: - subviews
+    
+    private var headerView: some View {
+        // Header avec titre et bouton "+"
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Toutes les factures")
+                    .font(.largeTitle)
+                
+                Picker("Année", selection: $selectedYear) {
+                    ForEach(availableYears, id: \.self) { year in
+                        Text("\(year)").tag(year)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+            
+            Spacer()
+            
+            // Bouton pour afficher/masquer les filtres
+            Button {
+                withAnimation {
+                    showFilters.toggle()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: showFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                    if activeFiltersCount > 0 {
+                        Text("\(activeFiltersCount)")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                    }
+                }
+                #if os(iOS)
+                .font(.title2)
+                .frame(width: 44, height: 44)
+                #else
+                .font(.title2)
+                #endif
+                .foregroundColor(activeFiltersCount > 0 ? .blue : .primary)
+            }
+            #if os(iOS)
+            .buttonStyle(.borderless)
+            #endif
+            
+            // Bouton créer
+            Button {
+                showCreateForm = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    #if os(iOS)
+                    .font(.title2)
+                    .frame(width: 44, height: 44)
+                    #else
+                    .font(.title2)
+                    #endif
+            }
+            #if os(iOS)
+            .buttonStyle(.borderless)
+            #endif
+        }
+        .padding(.horizontal)
+        .padding(.top)
+        .padding(.bottom, 8)
+    }
+    
+    private var filtersView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            
+            Divider()
+            
+            Text("Filtres")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            // Filtre par catégorie
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Catégorie")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                if viewModel.categories.isEmpty {
+                    Text("Chargement des catégories...")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                } else {
+                    Picker("Catégorie", selection: $selectedCategoryId) {
+                        Text("Toutes les catégories").tag(nil as Int?)
+                        ForEach(viewModel.categories) { category in
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(Color(hex: category.color))
+                                    .frame(width: 12, height: 12)
+                                Text(category.name)
+                            }
+                            .tag(category.id as Int?)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Filtres par montant
+            #if os(iOS)
+            // iOS : empilés verticalement pour petit écran
+            VStack(spacing: 16) {
+                amountFilterField(title: "Montant min", text: $minAmount)
+                amountFilterField(title: "Montant max", text: $maxAmount)
+            }
+            .padding(.horizontal)
+            #else
+            // macOS : côte à côte
+            HStack(spacing: 16) {
+                amountFilterField(title: "Montant min", text: $minAmount)
+                amountFilterField(title: "Montant max", text: $maxAmount)
+            }
+            .padding(.horizontal)
+            #endif
+            
+            // Bouton pour réinitialiser les filtres
+            if activeFiltersCount > 0 {
+                Button {
+                    selectedCategoryId = nil
+                    minAmount = ""
+                    maxAmount = ""
+                } label: {
+                    Text("Réinitialiser les filtres")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+                .padding(.horizontal)
+            }
+            
+            Divider()
+        }
+        .padding(.bottom, 8)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.isLoading {
+            ProgressView("Chargement des factures…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        else if let error = viewModel.errorMessage {
+            ErrorView(
+                message: error,
+                retryAction: {
+                    Task { await viewModel.loadBills(year: selectedYear) }
+                }
+            )
+        }
+        else if viewModel.bills.isEmpty {
+            if activeFiltersCount > 0 {
+                EmptyStateView(
+                    icon: "magnifyingglass",
+                    title: "Aucun résultat",
+                    message: "Aucune facture ne correspond à tes critères de recherche.",
+                    actionTitle: "Réinitialiser les filtres",
+                    action: {
+                        selectedCategoryId = nil
+                        minAmount = ""
+                        maxAmount = ""
+                    }
+                )
+            } else {
+                EmptyStateView(
+                    title: "Aucune facture",
+                    message: "Tu n'as pas encore de facture enregistrée pour \(selectedYear).",
+                    actionTitle: "Ajouter une facture",
+                    action: {
+                        showCreateForm = true
+                    }
+                )
+            }
+        }
+        else {
+            List(filteredBills) { bill in
+                NavigationLink(value: bill.bill) {
+                    BillRowView(
+                        bill: bill.bill,
+                        categoryColor: bill.categoryColor ?? "#999999", // Couleur par défaut
+                        onEdit: {
+                            billToEdit = bill.bill
+                        },
+                        onDelete: {
+                            billToDelete = bill.bill
+                            showDeleteConfirmation = true
+                        }
+                    )
+                }
+            }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
+        }
+    }
+    
+    
+    // MARK: - helpers
+    
     private func deleteBill(_ bill: Bill) async {
         await viewModel.deleteBill(billId: bill.id)
         billToDelete = nil
+    }
+    
+    private func amountFilterField(title: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            TextField("0.00", text: text)
+                #if os(iOS)
+                .keyboardType(.decimalPad)
+                .textFieldStyle(.roundedBorder)
+                #else
+                .textFieldStyle(.roundedBorder)
+                #endif
+        }
     }
 }

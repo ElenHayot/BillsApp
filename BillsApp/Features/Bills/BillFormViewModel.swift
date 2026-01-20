@@ -55,7 +55,6 @@ final class BillFormViewModel: ObservableObject {
         
         isSaving = true
         defer { isSaving = false }
-        
         do {
             let bill = try await APIClient.shared.createBill(
                 title: title,

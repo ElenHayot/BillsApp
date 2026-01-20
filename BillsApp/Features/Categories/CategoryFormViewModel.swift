@@ -11,7 +11,7 @@ import Combine
 @MainActor
 final class CategoryFormViewModel: ObservableObject {
     
-    @Published var isCreating = false
+    @Published var isSaving = false
     @Published var errorMessage: String?
     
     func createCategory(
@@ -19,11 +19,33 @@ final class CategoryFormViewModel: ObservableObject {
         color: String
     ) async -> Category? {
         
-        isCreating = true
-        defer { isCreating = false }
+        isSaving = true
+        defer { isSaving = false }
         
         do {
             let category = try await APIClient.shared.createCategory(
+                name: name,
+                color: color
+            )
+            return category
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+    
+    func updateCategory(
+        categoryName: String,
+        name: String,
+        color: String
+    ) async -> Category? {
+        
+        isSaving = true
+        defer { isSaving = false }
+        
+        do {
+            let category = try await APIClient.shared.updateCategory(
+                categoryName: categoryName,
                 name: name,
                 color: color
             )

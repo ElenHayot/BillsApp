@@ -9,7 +9,8 @@ import SwiftUI
 
 struct CategoryFormView: View {
     
-    let onCreated: (Category) -> Void
+    let category: Category? // nil = création, non-nil = édition
+    let onSaved: (Category) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = CategoryFormViewModel()
@@ -27,8 +28,119 @@ struct CategoryFormView: View {
         "#F39C12", "#1ABC9C", "#34495E", "#95A5A6"
     ]
     
+    init(category: Category? = nil, onSaved: @escaping (Category) -> Void) {
+        self.category = category
+        self.onSaved = onSaved
+        
+        // Initialise les states avec les valeurs existantes ou par défaut
+        _name = State(initialValue: category?.name ?? "")
+        _selectedColor = State(initialValue: category != nil ? "\(category!.color)" : "")
+    }
+    
+    var isEditing: Bool{
+        category != nil
+    }
+    
     var body: some View {
-        VStack(spacing: 20) {
+        
+        NavigationStack {
+            VStack(spacing: 20) {
+                formContent
+                
+                actionButtons
+                    .padding()
+            }
+            .navigationTitle(isEditing ? "Éditer" : "Nouvelle catégorie")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Annuler") { dismiss() }
+                }
+                // Barre d'outils clavier iOS
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("OK") {
+                        focusedField = nil
+                    }
+                }
+            }
+            #endif
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+        .padding()
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+    }
+    
+    // MARK: - subviews
+    
+    private var formContent: some View {
+        // Champ couleur
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Color")
+                .font(.headline)
+            
+            HStack {
+                // Aperçu de la couleur sélectionnée
+                Circle()
+                    .fill(Color(hex: selectedColor))
+                    .frame(width: 40, height: 40)
+                
+                Text(selectedColor)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                // Bouton pour ouvrir le color picker
+                Button {
+                    showColorPicker.toggle()
+                } label: {
+                    Image(systemName: "paintpalette.fill")
+                        .font(.title2)
+                }
+            }
+            .padding(.horizontal, 4)
+            
+            // Grid de couleurs
+            if showColorPicker {
+                LazyVGrid(columns: [
+                    GridItem(.adaptive(minimum: 50))
+                ], spacing: 12) {
+                    ForEach(availableColors, id: \.self) { color in
+                        Circle()
+                            .fill(Color(hex: color))
+                            .frame(width: 50, height: 50)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(
+                                        selectedColor == color ? Color.primary : Color.clear,
+                                        lineWidth: 3
+                                    )
+                            )
+                            .onTapGesture {
+                                selectedColor = color
+                                showColorPicker = false
+                            }
+                    }
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            
+            Spacer()
             
             Text("New Category")
                 .font(.largeTitle)
@@ -43,105 +155,61 @@ struct CategoryFormView: View {
                     .textFieldStyle(.roundedBorder)
                     .padding(.horizontal, 4)
             }
-            
-            // Champ couleur
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Color")
-                    .font(.headline)
-                
-                HStack {
-                    // Aperçu de la couleur sélectionnée
-                    Circle()
-                        .fill(Color(hex: selectedColor))
-                        .frame(width: 40, height: 40)
-                    
-                    Text(selectedColor)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                    
-                    // Bouton pour ouvrir le color picker
-                    Button {
-                        showColorPicker.toggle()
-                    } label: {
-                        Image(systemName: "paintpalette.fill")
-                            .font(.title2)
-                    }
-                }
-                .padding(.horizontal, 4)
-                
-                // Grid de couleurs
-                if showColorPicker {
-                    LazyVGrid(columns: [
-                        GridItem(.adaptive(minimum: 50))
-                    ], spacing: 12) {
-                        ForEach(availableColors, id: \.self) { color in
-                            Circle()
-                                .fill(Color(hex: color))
-                                .frame(width: 50, height: 50)
-                                .overlay(
-                                    Circle()
-                                        .strokeBorder(
-                                            selectedColor == color ? Color.primary : Color.clear,
-                                            lineWidth: 3
-                                        )
-                                )
-                                .onTapGesture {
-                                    selectedColor = color
-                                    showColorPicker = false
-                                }
-                        }
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                }
-            }
-            
-            Spacer()
-            
-            // Boutons d'action
-            HStack(spacing: 16) {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-                
-                Button {
-                    Task {
-                        await createCategory()
-                    }
-                } label: {
-                    if viewModel.isCreating {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("Create")
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(name.isEmpty || viewModel.isCreating)
-            }
-        }
-        .padding()
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
-                viewModel.errorMessage = nil
-            }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
         }
     }
     
-    private func createCategory() async {
-        let category = await viewModel.createCategory(
-            name: name,
-            color: selectedColor
-        )
+    private var actionButtons: some View {
+        HStack(spacing: 16) {
+            #if os(macOS)
+            Button("Annuler") {
+                dismiss()
+            }
+            .buttonStyle(.bordered)
+            #endif
+            
+            Button {
+                Task {
+                    await saveCategory()
+                }
+            } label: {
+                if viewModel.isSaving {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                } else {
+                    Text(isEditing ? "Sauvegarder" : "Créer")
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!isFormValid || viewModel.isSaving)
+        }
+    }
+    
+    // MARK: - helpers
+    
+    private var isFormValid: Bool {
+        !name.isEmpty &&
+        !selectedColor.isEmpty
+    }
+    
+    private func saveCategory() async {
+        let color = selectedColor
+        let savedCategory: Category?
         
-        if let category = category {
-            onCreated(category)
+        if let existingCategory = category {
+            // Édition
+            savedCategory = await viewModel.updateCategory(
+                categoryName: existingCategory.name,
+                name: name,
+                color: color
+            )
+        } else {
+            // Création
+            savedCategory = await viewModel.createCategory(name: name, color: color)
+        }
+        
+        if let savedCategory = savedCategory {
+            onSaved(savedCategory)
             dismiss()
         }
     }
