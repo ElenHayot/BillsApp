@@ -16,9 +16,12 @@ struct ContentView: View {
             if authViewModel.isAuthenticated {
                 // Utilisateur connecté → Dashboard
                 DashboardView()
-            } else {
-                // Utilisateur non connecté → Login
+            } else if authViewModel.hasUsers {
+                // Des utilisateurs existent → Login
                 LoginView()
+            } else {
+                // Aucun utilisateur → Création du premier user
+                UserFormView()
             }
         }
         // Animation fluide lors du changement d'état

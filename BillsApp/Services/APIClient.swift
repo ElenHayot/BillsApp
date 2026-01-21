@@ -10,7 +10,8 @@ import Foundation
 final class APIClient {
     static let shared = APIClient()
 
-    private let baseURL = URL(string: "http://localhost:8000/api/v1")!
+    //private let baseURL = URL(string: "http://localhost:8000/api/v1")!
+    private let baseURL = URL(string: "http://172.20.10.3:8000/api/v1")!
     
     // Lock pour éviter les refreshs multiples simultanés
     private var isRefreshing = false
@@ -230,6 +231,39 @@ final class APIClient {
         KeychainManager.shared.deleteRefreshToken()
     }
     
+    // MARK: - Users
+    
+    /// Récupère tous les utilisateurs
+    func fetchUsers() async throws -> [User] {
+        var url = baseURL
+        url.append(path: "users/")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        return try await performRequest(request, responseType: [User].self)
+    }
+    
+    /// Crée un nouveau utilisateur
+    func createUser(email: String, password: String) async throws -> User {
+        var url = baseURL
+        url.append(path: "users/")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: String] = [
+            "email": email,
+            "password": password
+        ]
+        
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        return try await performRequest(request, responseType: User.self)
+    }
+    
     // MARK: - Categories
     
     /// Récupère toutes les catégories
@@ -264,9 +298,9 @@ final class APIClient {
     }
     
     /// Met à jour une catégorie
-    func updateCategory(categoryName: String, name: String, color: String) async throws -> Category {
+    func updateCategory(categoryId: Int, name: String, color: String) async throws -> Category {
         var url = baseURL
-        url.append(path: "categories/\(categoryName)/")
+        url.append(path: "categories/\(categoryId)/")
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
@@ -283,9 +317,9 @@ final class APIClient {
     }
     
     /// Supprime une catégorie
-    func deleteCategory(categoryName: String) async throws {
+    func deleteCategory(categoryId: Int) async throws {
         var url = baseURL
-        url.append(path: "categories/\(categoryName)/")
+        url.append(path: "categories/\(categoryId)/")
         
          var request = URLRequest(url: url)
         request.httpMethod = "DELETE"

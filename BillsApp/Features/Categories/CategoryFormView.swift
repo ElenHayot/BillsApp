@@ -211,7 +211,7 @@ struct CategoryFormView: View {
         if let existingCategory = category {
             // Édition
             savedCategory = await viewModel.updateCategory(
-                categoryName: existingCategory.name,
+                categoryId: existingCategory.id,
                 name: name,
                 color: color
             )

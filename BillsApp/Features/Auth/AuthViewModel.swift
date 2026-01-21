@@ -14,25 +14,47 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var accessToken: String?
+    @Published var hasUsers = false
     
     init() {
-        // Au démarrage, vérifier si on a un refresh token valide
-        checkAuthenticationState()
+        Task {
+            // Au démarrage, vérifier si on a un refresh token valide
+            await checkAuthenticationState()
+        }
+    }
+    
+    @MainActor
+    func checkIfUsersExist() async {
+        // Vérifie s'il existe des utilisateurs dans ta base de données
+        // Exemple avec UserDefaults (à adapter selon ton système de stockage)
+//        hasUsers = UserDefaults.standard.object(forKey: "hasUsers") != nil
+        do {
+            let users = try await APIClient.shared.fetchUsers()
+            hasUsers = !users.isEmpty
+        } catch {
+            errorMessage = error.localizedDescription
+            hasUsers = false
+            print("❌ Erreur lors de la vérification des users: \(error)")
+        }
     }
     
     // MARK: - Check Authentication State
     /// Vérifie si l'utilisateur est déjà connecté au démarrage de l'app
-    private func checkAuthenticationState() {
+    private func checkAuthenticationState() async {
         // Si on a un access token en mémoire ET un refresh token dans le Keychain
         if let token = AuthStorage.shared.accessToken,
            KeychainManager.shared.getRefreshToken() != nil {
             accessToken = token
             isAuthenticated = true
+            hasUsers = true
         } else if KeychainManager.shared.getRefreshToken() != nil {
             // Si on a seulement un refresh token, on peut tenter un refresh
-            Task {
-                await attemptTokenRefresh()
-            }
+            await attemptTokenRefresh()
+            hasUsers = true
+        } else {
+            print("❓ Pas de token, vérification des utilisateurs...")
+            // Si pas de token ni de refresh, on vérifie qu'il existe au moins un compte utilisateur
+            await checkIfUsersExist()
         }
     }
     
@@ -43,6 +65,7 @@ class AuthViewModel: ObservableObject {
             // Simuler une requête qui va déclencher le refresh automatique
             // En pratique, le refresh se fera automatiquement lors de la première requête API
             // Ici on pourrait faire un appel à un endpoint de "check" ou attendre la première requête
+            try await APIClient.shared.fetchCategories()
             print("✅ Refresh token disponible, l'utilisateur sera reconnecté automatiquement")
         } catch {
             // Si ça échoue, on déconnecte

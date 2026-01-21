@@ -31,7 +31,7 @@ final class CategoriesViewModel: ObservableObject {
     func deleteCategory(category: Category) async {
         do {
             try await APIClient.shared.deleteCategory(
-                categoryName: category.name
+                categoryId: category.id
             )
             // Supprime de la liste locale
             categories.removeAll { $0.id == category.id }

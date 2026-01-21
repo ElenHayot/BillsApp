@@ -35,7 +35,7 @@ final class CategoryFormViewModel: ObservableObject {
     }
     
     func updateCategory(
-        categoryName: String,
+        categoryId: Int,
         name: String,
         color: String
     ) async -> Category? {
@@ -45,7 +45,7 @@ final class CategoryFormViewModel: ObservableObject {
         
         do {
             let category = try await APIClient.shared.updateCategory(
-                categoryName: categoryName,
+                categoryId: categoryId,
                 name: name,
                 color: color
             )
