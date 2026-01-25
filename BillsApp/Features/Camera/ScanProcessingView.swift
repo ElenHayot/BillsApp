@@ -423,12 +423,13 @@ struct ScanProcessingView: View {
         let lines = text.components(separatedBy: .newlines)
         print("🔍 [EXTRACT] Début extraction montant avec \(lines.count) lignes")
         
-        // STRATÉGIE 1: Chercher "Solde à payer" (le PLUS fiable)
+        // STRATÉGIE 1: Chercher "Solde à payer" ou "Reste à payer" (le PLUS fiable)
         for i in 0..<lines.count {
             let lineUpper = lines[i].uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
             
-            if lineUpper.contains("SOLDE") && lineUpper.contains("PAYER") {
-                print("✅ [STRAT1] Ligne 'Solde à payer' trouvée: \(lines[i])")
+            if (lineUpper.contains("SOLDE") && lineUpper.contains("PAYER")) ||
+               (lineUpper.contains("RESTE") && lineUpper.contains("PAYER")) {
+                print("✅ [STRAT1] Ligne 'Solde/Reste à payer' trouvée: \(lines[i])")
                 
                 var amountsAroundSolde: [Double] = []
                 
@@ -448,77 +449,129 @@ struct ScanProcessingView: View {
                 }
                 
                 if let maxAmount = amountsAroundSolde.max() {
-                    print("💰 [STRAT1] Plus grand montant autour de 'Solde à payer': \(maxAmount)")
+                    print("💰 [STRAT1] Plus grand montant autour de 'Solde/Reste à payer': \(maxAmount)")
                     return maxAmount
                 } else {
-                    print("❌ [STRAT1] Aucun montant trouvé autour de 'Solde à payer'")
+                    print("❌ [STRAT1] Aucun montant trouvé autour de 'Solde/Reste à payer'")
                 }
             }
         }
         
-        // STRATÉGIE 2: Chercher "Total TTC" ou "TOTAL TTC" (PLUS PRIORITAIRE)
+        // STRATÉGIE 2: Chercher "Montant :" ou "Montant à payer"
         for i in 0..<lines.count {
-            let lineUpper = lines[i].uppercased()
+            let lineUpper = lines[i].uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
             
-            if lineUpper.contains("TOTAL") && lineUpper.contains("TTC") {
-                print("✅ [STRAT2] Ligne 'Total TTC' trouvée: \(lines[i])")
+            if lineUpper.contains("MONTANT") && (lineUpper.contains(":") || lineUpper.contains("PAYER")) {
+                print("✅ [STRAT2] Ligne 'Montant' trouvée: \(lines[i])")
+                
+                var amountsAroundMontant: [Double] = []
+                
+                // Cherche dans cette ligne
                 if let amount = extractBestNumberFromLine(lines[i]) {
-                    print("💰 [STRAT2] Montant trouvé sur même ligne: \(amount)")
-                    return amount
+                    amountsAroundMontant.append(amount)
                 }
+                
+                // Puis dans les 2 lignes suivantes
                 for j in 1...2 {
                     if i + j < lines.count {
                         print("🔎 [STRAT2] Vérification ligne \(i+j): \(lines[i+j])")
                         if let amount = extractBestNumberFromLine(lines[i + j]) {
-                            print("💰 [STRAT2] Montant trouvé ligne suivante: \(amount)")
-                            return amount
+                            amountsAroundMontant.append(amount)
                         }
                     }
                 }
-                print("❌ [STRAT2] Aucun montant trouvé autour de 'Total TTC'")
+                
+                if let maxAmount = amountsAroundMontant.max() {
+                    print("💰 [STRAT2] Plus grand montant autour de 'Montant': \(maxAmount)")
+                    return maxAmount
+                } else {
+                    print("❌ [STRAT2] Aucun montant trouvé autour de 'Montant'")
+                }
             }
         }
         
-        // STRATÉGIE 3: Chercher ligne qui est EXACTEMENT "Total" (seule sur sa ligne)
+        // STRATÉGIE 3: Chercher "Total TTC" ou "TOTAL TTC" (PLUS PRIORITAIRE)
+        for i in 0..<lines.count {
+            let lineUpper = lines[i].uppercased()
+            
+            if lineUpper.contains("TOTAL") && lineUpper.contains("TTC") {
+                print("✅ [STRAT3] Ligne 'Total TTC' trouvée: \(lines[i])")
+                
+                var amountsAroundTTC: [Double] = []
+                
+                if let amount = extractBestNumberFromLine(lines[i]) {
+                    amountsAroundTTC.append(amount)
+                }
+                for j in 1...2 {
+                    if i + j < lines.count {
+                        print("🔎 [STRAT3] Vérification ligne \(i+j): \(lines[i+j])")
+                        if let amount = extractBestNumberFromLine(lines[i + j]) {
+                            amountsAroundTTC.append(amount)
+                        }
+                    }
+                }
+                
+                if let maxAmount = amountsAroundTTC.max() {
+                    print("💰 [STRAT3] Plus grand montant autour de 'Total TTC': \(maxAmount)")
+                    return maxAmount
+                } else {
+                    print("❌ [STRAT3] Aucun montant trouvé autour de 'Total TTC'")
+                }
+            }
+        }
+        
+        // STRATÉGIE 4: Chercher "Total" SEUL mais EXCLURE les lignes avec "KG", "TN", poids, quantités
         for i in 0..<lines.count {
             let lineTrimmed = lines[i].trimmingCharacters(in: .whitespacesAndNewlines)
             
             if lineTrimmed.uppercased() == "TOTAL" {
-                print("✅ [STRAT3] Ligne exacte 'Total' trouvée à ligne \(i)")
-                // Cherche dans les 5 lignes suivantes
+                print("✅ [STRAT4] Ligne exacte 'Total' trouvée à ligne \(i)")
+                
+                var amountsAroundTotal: [Double] = []
+                
+                // Cherche dans les 5 lignes suivantes en excluant les lignes avec poids/quantités
                 for j in 1...5 {
                     if i + j < lines.count {
-                        print("🔎 [STRAT3] Vérification ligne \(i+j): \(lines[i+j])")
-                        if let amount = extractBestNumberFromLine(lines[i + j]) {
-                            print("💰 [STRAT3] Montant trouvé ligne suivante: \(amount)")
-                            return amount
+                        let checkLine = lines[i + j].uppercased()
+                        // Exclure les lignes qui contiennent des unités de poids/quantité
+                        if !checkLine.contains("KG") && !checkLine.contains("TN") &&
+                           !checkLine.contains("QUANTITE") && !checkLine.contains("POIDS") &&
+                           !checkLine.contains("UNITE") && !checkLine.contains("UNIT.") {
+                            print("🔎 [STRAT4] Vérification ligne \(i+j): \(lines[i+j])")
+                            if let amount = extractBestNumberFromLine(lines[i + j]) {
+                                amountsAroundTotal.append(amount)
+                            }
+                        } else {
+                            print("⏭️ [STRAT4] Ligne ignorée (contient poids/quantité): \(lines[i+j])")
                         }
                     }
                 }
-                print("❌ [STRAT3] Aucun montant trouvé après 'Total'")
-            }
-        }
-        
-        // STRATÉGIE 4: Chercher "Total" suivi de montant sur la même ligne
-        for line in lines {
-            let lineUpper = line.uppercased()
-            if lineUpper.contains("TOTAL") && !lineUpper.contains("TTC") && !lineUpper.contains("HT") && !lineUpper.contains("HTVA") {
-                print("✅ [STRAT4] Ligne 'Total' avec montant trouvé: \(line)")
-                if let amount = extractBestNumberFromLine(line) {
-                    print("💰 [STRAT4] Montant trouvé: \(amount)")
-                    return amount
+                
+                if let maxAmount = amountsAroundTotal.max() {
+                    print("💰 [STRAT4] Plus grand montant trouvé après 'Total': \(maxAmount)")
+                    return maxAmount
+                } else {
+                    print("❌ [STRAT4] Aucun montant trouvé après 'Total'")
                 }
-                print("❌ [STRAT4] Aucun montant extrait de cette ligne")
             }
         }
         
-        // STRATÉGIE 5: Fallback - cherche le plus grand montant dans TOUT le document
-        print("🔄 [STRAT5] Fallback - recherche du plus grand montant dans tout le document")
+        // STRATÉGIE 5: Fallback - cherche le plus grand montant mais avec filtres plus stricts
+        print("🔄 [STRAT5] Fallback - recherche avec filtres stricts")
         var allAmounts: [Double] = []
         for line in lines {
-            if let amount = extractBestNumberFromLine(line) {
-                allAmounts.append(amount)
-                print("💰 [STRAT5] Montant trouvé: \(amount) dans ligne: \(line)")
+            let lineUpper = line.uppercased()
+            // Ignorer les lignes avec des unités de poids, quantité, prix unitaire
+            if !lineUpper.contains("KG") && !lineUpper.contains("TN") &&
+               !lineUpper.contains("QUANTITE") && !lineUpper.contains("POIDS") &&
+               !lineUpper.contains("UNITE") && !lineUpper.contains("UNIT.") &&
+               !lineUpper.contains("PRIX UNIT") && !lineUpper.contains("/TONNE") {
+                if let amount = extractBestNumberFromLine(line) {
+                    allAmounts.append(amount)
+                    print("💰 [STRAT5] Montant trouvé: \(amount) dans ligne: \(line)")
+                }
+            } else {
+                print("⏭️ [STRAT5] Ligne ignorée (contient poids/quantité): \(line)")
             }
         }
         
@@ -659,3 +712,4 @@ struct ScanProcessingView: View {
     }
 }
 #endif
+
