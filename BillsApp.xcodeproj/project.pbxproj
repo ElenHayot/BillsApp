@@ -35,7 +35,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		F3244B972F20E91F00F0491D /* Exceptions for "BillsApp" folder in "BillsApp" target */ = {
+		F36EF1CA2F2267A400C7EBB3 /* Exceptions for "BillsApp" folder in "BillsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -48,7 +48,7 @@
 		F3D25DCF2F0286070079D418 /* BillsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				F3244B972F20E91F00F0491D /* Exceptions for "BillsApp" folder in "BillsApp" target */,
+				F36EF1CA2F2267A400C7EBB3 /* Exceptions for "BillsApp" folder in "BillsApp" target */,
 			);
 			path = BillsApp;
 			sourceTree = "<group>";

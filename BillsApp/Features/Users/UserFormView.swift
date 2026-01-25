@@ -25,11 +25,14 @@ struct UserFormView: View {
         #endif
     }
     
+    // MARK: - subviews
+    
     // Layout pour macOS
     private var macOSLayout: some View {
         VStack(spacing: 24) {
             headerSection
             formSection
+            passwordHint
             createButton
             
             if !errorMessage.isEmpty {
@@ -49,6 +52,7 @@ struct UserFormView: View {
                 VStack(spacing: 24) {
                     headerSection
                     formSection
+                    passwordHint
                     createButton
                     
                     if !errorMessage.isEmpty {
@@ -115,6 +119,7 @@ struct UserFormView: View {
                 .textContentType(.newPassword)
             #endif
         }
+        
     }
     
     // Bouton de création
@@ -136,6 +141,22 @@ struct UserFormView: View {
         .controlSize(.large)
         .disabled(isLoading || !isFormValid)
     }
+    
+    // Affichage simple des règles
+    @ViewBuilder
+    private var passwordHint: some View {
+        if !password.isEmpty && password.count < 8 {
+            HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.orange)
+                Text("Au moins 8 caractères requis")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    // MARK: - helpers
     
     // Validation du formulaire
     private var isFormValid: Bool {
@@ -179,5 +200,27 @@ struct UserFormView: View {
                 }
             }
         }
+    }
+    
+    // Fortification du mot de passe
+    struct PasswordValidator {
+        static func validate(_ password: String) -> PasswordStrength {
+            let minLength = 8
+            
+            if password.count < minLength {
+                return PasswordStrength(
+                    isValid: false,
+                    message: "Le mot de passe doit contenir au moins \(minLength) caractères"
+                )
+            }
+            
+            return PasswordStrength(isValid: true, message: "Mot de passe valide")
+        }
+    }
+
+    // Validation du mot de passe
+    struct PasswordStrength {
+        let isValid: Bool
+        let message: String
     }
 }

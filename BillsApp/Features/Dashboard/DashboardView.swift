@@ -16,6 +16,13 @@ struct DashboardView: View {
     @State private var navigationPath = NavigationPath()
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date()) //Année actuelle par défaut
 
+    // 📸 États pour le scan de facture
+    @State private var showCamera = false
+    #if os(iOS)
+    @State private var capturedImage: UIImage?
+    #endif
+    @State private var showScanProcessing = false
+    
     enum DisplayMode {
         case pie
         case bar
@@ -62,6 +69,8 @@ struct DashboardView: View {
                                 }
                             )
                         }
+                        
+                        scanButton
                     }
                 }
                 else {
@@ -85,12 +94,27 @@ struct DashboardView: View {
                     }
                 }
             }
+            #if os(iOS)
+            // 📸 Sheet pour la caméra
+            .sheet(isPresented: $showCamera) {
+                ImagePicker(image: $capturedImage, sourceType: .camera)
+            }
+            // 📸 Sheet pour le traitement de l'image
+            .sheet(item: $capturedImage) { image in
+                ScanProcessingView(image: image) {
+                    // Callback après traitement réussi
+                    Task {
+                        await viewModel.loadDashboard(year: selectedYear)
+                    }
+                }
+            }
+            #endif
             .navigationDestination(for: DashboardCategoryStats.self) { category in
                 BillsListView(
                     categoryId: category.categoryId,
                     categoryName: category.categoryName,
                     categoryColor: category.categoryColor,
-                    year: selectedYear // ✅ Utilise l'année sélectionnée
+                    year: selectedYear
                 )
             }
             .navigationDestination(for: String.self) { destination in
@@ -235,4 +259,59 @@ struct DashboardView: View {
         .pickerStyle(.segmented)
         .padding(.horizontal)
     }
+    
+    // 📸 BOUTON DE SCAN - Design engageant
+    private var scanButton: some View {
+        Button {
+            #if os(iOS)
+            showCamera = true
+            #else
+            // Sur macOS, on pourrait proposer un file picker
+            print("Scan non disponible sur macOS")
+            #endif
+        } label: {
+            HStack {
+                Image(systemName: "doc.text.viewfinder")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Scanner une facture")
+                        .font(.headline)
+                    Text("Extraction automatique des données")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.9))
+                }
+                
+                Spacer()
+                
+                Image(systemName: "camera.fill")
+                    .font(.title3)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .foregroundColor(.white)
+            .cornerRadius(12)
+            .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
 }
+
+#if os(iOS)
+// 📸 Extension pour rendre UIImage identifiable (nécessaire pour .sheet(item:))
+extension UIImage: @retroactive Identifiable {
+    public var id: String {
+        return UUID().uuidString
+    }
+}
+#endif
