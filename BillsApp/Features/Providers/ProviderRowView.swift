@@ -15,36 +15,51 @@ struct ProviderRowView: View {
     let onDelete: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading) {
+        HStack(spacing: 16) {
+            // Icône fournisseur
+            Image(systemName: "building.2.fill")
+                .font(.title2)
+                .foregroundColor(.blue)
+                .frame(width: 24, height: 24)
+            
+            // Contenu principal
+            VStack(alignment: .leading, spacing: 4) {
                 Text(provider.name)
                     .font(.headline)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
                 
-                Text(String(provider.id)).font(Font.caption.italic())
+                Text("ID: \(provider.id)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fontDesign(.monospaced)
             }
-
+            
             Spacer()
             
-            // Bouton éditer
-            Button {
-                onEdit()
-            } label: {
-                Image(systemName: "pencil.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(.blue)
+            // Actions
+            HStack(spacing: 8) {
+                Button {
+                    onEdit()
+                } label: {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            
-            // Bouton supprimer
-            Button {
-                onDelete()
-            } label: {
-                Image(systemName: "trash.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(.red)
-            }
-            .buttonStyle(.plain)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
     }
 }

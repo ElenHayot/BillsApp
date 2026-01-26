@@ -56,35 +56,27 @@ struct BillFormView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                if viewModel.isLoading {
-                    ProgressView("Chargement des factures...")
-                } else {
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
                     
-                    formContent
+                    // Formulaire
+                    formCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
                     
-                    actionButtons
-                        .padding()
-                    
+                    // Actions
+                    actionsCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                        .padding(.bottom, 100)
                 }
             }
-            .navigationTitle(isEditing ? "Éditer" : "Nouvelle facture")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Annuler") { dismiss() }
-                }
-                // Barre d'outils clavier iOS
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("OK") {
-                        focusedField = nil
-                    }
-                }
-            }
-            #endif
+            .background(Color(UIColor.systemGroupedBackground))
         }
         .task {
             await viewModel.loadCategories()
@@ -118,177 +110,260 @@ struct BillFormView: View {
     
     // MARK: - Subviews
         
-    private var formContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                
-                // Titre
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Titre")
-                        .font(.headline)
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isEditing ? "Éditer la facture" : "Nouvelle facture")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
                     
-                    TextField("Titre de la facture", text: $title)
-                        #if os(iOS)
-                        .textFieldStyle(.roundedBorder)
-                        .autocapitalization(.words)
-                        .focused($focusedField, equals: .title)
-                        #else
-                        .textFieldStyle(.roundedBorder)
-                        #endif
-                }
-                
-                // Montant
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Montant")
-                        .font(.headline)
-                    
-                    TextField("0.00", text: $amount)
-                        #if os(iOS)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.decimalPad)
-                        .focused($focusedField, equals: .amount)
-                        #else
-                        .textFieldStyle(.roundedBorder)
-                        #endif
-                }
-                
-                // Date
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Date")
-                        .font(.headline)
-                    
-                    DatePicker("", selection: $date, displayedComponents: .date)
-                        #if os(iOS)
-                        .datePickerStyle(.automatic) // iOS : roue ou modal
-                        #else
-                        .datePickerStyle(.compact) // macOS : compact
-                        #endif
-                }
-                
-                // Catégorie
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Catégorie")
-                        .font(.headline)
-                    
-                    if viewModel.categories.isEmpty {
-                        Text("Pas de catégorie disponible")
+                    if isEditing {
+                        Text("Modifie les informations de la facture")
+                            .font(.subheadline)
                             .foregroundColor(.secondary)
                     } else {
-                        Picker("Sélectionner catégorie", selection: $selectedCategoryId) {
-                            Text("Sélectionne une catégorie").tag(nil as Int?)
-                            ForEach(viewModel.categories) { category in
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color(hex: category.color))
-                                        .frame(width: 12, height: 12)
-                                    Text(category.name)
-                                }
-                                .tag(category.id as Int?)
-                            }
-                        }
-                        .pickerStyle(.menu)
+                        Text("Ajoute une nouvelle facture à ta collection")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
-                // Fournisseur
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Fournisseur (optionnel)")
-                        .font(.headline)
-                    
-                    if viewModel.providers.isEmpty {
-                        Text("Pas de fournisseur disponible")
-                            .foregroundColor(.secondary)
-                    } else {
-                        Picker("Sélectionner fournisseur", selection: $selectedProviderId) {
-                            Text("Sélectionne un fournisseur").tag(nil as Int?)
-                            ForEach(viewModel.providers) { provider in
-                                Text(provider.name).tag(provider.id as Int?)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                    }
-                }
+                Spacer()
                 
-                // Nom du fournisseur
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Nom du fournisseur (optionnel)")
-                        .font(.headline)
-                    
-                    #if os(iOS)
-                    // iOS : TextEditor avec hauteur fixe
-                    TextEditor(text: $providerName)
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                        .focused($focusedField, equals: .providerName)
-                    #else
-                    // macOS : TextEditor classique
-                    TextEditor(text: $providerName)
-                        .frame(height: 100)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                    #endif
+                Button("Annuler") {
+                    dismiss()
                 }
-                
-                // Commentaire
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Commentaire (optionnel)")
-                        .font(.headline)
-                    
-                    #if os(iOS)
-                    TextEditor(text: $comment)
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                        .focused($focusedField, equals: .comment)
-                    #else
-                    TextEditor(text: $comment)
-                        .frame(height: 100)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                    #endif
-                }
+                .foregroundColor(.blue)
+                .font(.headline)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     
-    private var actionButtons: some View {
+    private var formCard: some View {
+        VStack(spacing: 20) {
+            // Titre
+            formField(
+                title: "Titre",
+                placeholder: "Titre de la facture",
+                text: $title,
+                field: .title
+            )
+            
+            // Montant
+            formField(
+                title: "Montant",
+                placeholder: "0.00",
+                text: $amount,
+                field: .amount,
+                keyboardType: .decimalPad
+            )
+            
+            // Date
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Date")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                DatePicker("", selection: $date, displayedComponents: .date)
+                    #if os(iOS)
+                    .datePickerStyle(.automatic)
+                    #else
+                    .datePickerStyle(.compact)
+                    #endif
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            
+            // Catégorie
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Catégorie")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                if viewModel.categories.isEmpty {
+                    Text("Pas de catégorie disponible")
+                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color(UIColor.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                } else {
+                    Picker("Sélectionner catégorie", selection: $selectedCategoryId) {
+                        Text("Sélectionne une catégorie").tag(nil as Int?)
+                        ForEach(viewModel.categories) { category in
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(Color(hex: category.color))
+                                    .frame(width: 12, height: 12)
+                                Text(category.name)
+                            }
+                            .tag(category.id as Int?)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            
+            // Fournisseur
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Fournisseur (optionnel)")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                if viewModel.providers.isEmpty {
+                    Text("Pas de fournisseur disponible")
+                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color(UIColor.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                } else {
+                    Picker("Sélectionner fournisseur", selection: $selectedProviderId) {
+                        Text("Sélectionne un fournisseur").tag(nil as Int?)
+                        ForEach(viewModel.providers) { provider in
+                            Text(provider.name).tag(provider.id as Int?)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            
+            // Nom du fournisseur
+            formTextArea(
+                title: "Nom du fournisseur (optionnel)",
+                text: $providerName,
+                field: .providerName
+            )
+            
+            // Commentaire
+            formTextArea(
+                title: "Commentaire (optionnel)",
+                text: $comment,
+                field: .comment
+            )
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(UIColor.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+    
+    private var actionsCard: some View {
         HStack(spacing: 16) {
-            #if os(macOS)
             Button("Annuler") {
                 dismiss()
             }
-            .buttonStyle(.bordered)
-            #endif
+            .foregroundColor(.blue)
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .buttonStyle(.plain)
             
             Button {
                 Task {
                     await saveBill()
                 }
             } label: {
-                if viewModel.isSaving {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                } else {
+                HStack {
+                    if viewModel.isSaving {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: isEditing ? "square.and.arrow.down" : "plus")
+                            .font(.title3)
+                    }
+                    
                     Text(isEditing ? "Sauvegarder" : "Créer")
-                        .frame(maxWidth: .infinity)
+                        .font(.headline)
                 }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: isFormValid ? [Color.blue, Color.blue.opacity(0.85)] : [Color.gray, Color.gray.opacity(0.85)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: isFormValid ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 2)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
             .disabled(!isFormValid || viewModel.isSaving)
         }
     }
     
-    // MARK: - helpers
+    // MARK: - Helpers
+    
+    private func formField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>,
+        field: Field,
+        keyboardType: UIKeyboardType = .default
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            TextField(placeholder, text: text)
+                #if os(iOS)
+                .keyboardType(keyboardType)
+                .focused($focusedField, equals: field)
+                .autocapitalization(.words)
+                #endif
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(UIColor.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+    
+    private func formTextArea(
+        title: String,
+        text: Binding<String>,
+        field: Field
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            TextEditor(text: text)
+                #if os(iOS)
+                .focused($focusedField, equals: field)
+                #endif
+                .frame(height: 80)
+                .padding(8)
+                .background(Color(UIColor.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
     
     private var isFormValid: Bool {
         !title.isEmpty &&
@@ -310,7 +385,7 @@ struct BillFormView: View {
             selectedProviderId = await detecteProviderId(name: providerName)
         }
         
-        // 🆕 Vérifier si on doit créer un provider
+        // Vérifier si on doit créer un provider
         if shouldCreateProvider() {
             providerToCreate = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
             showProviderAlert = true
@@ -360,7 +435,7 @@ struct BillFormView: View {
         return nil
     }
     
-    // 🆕 Logique de détection de provider à créer
+    // Logique de détection de provider à créer
     private func shouldCreateProvider() -> Bool {
         let trimmedName = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -377,7 +452,7 @@ struct BillFormView: View {
         return !providerExists
     }
     
-    // 🆕 Forcer la sauvegarde sans créer le provider
+    // Forcer la sauvegarde sans créer le provider
     private func saveBillForceWithoutProvider() async {
         guard let amountDecimal = Decimal(string: amount),
               let categoryId = selectedCategoryId
@@ -422,7 +497,7 @@ struct BillFormView: View {
         }
     }
     
-    // 🆕 Créer le nouveau provider
+    // Créer le nouveau provider
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         

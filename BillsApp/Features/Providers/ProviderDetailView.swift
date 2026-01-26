@@ -20,26 +20,23 @@ struct ProviderDetailView: View {
     @State private var showDeleteConfirmation = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-
-            Text(provider.name)
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Spacer()
-
-            Button(role: .destructive) {
-                showDeleteConfirmation = true
-            } label: {
-                if viewModel.isDeleting {
-                    ProgressView()
-                } else {
-                    Text("Supprimer le fournisseur")
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Actions
+                    actionsCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                        .padding(.bottom, 100)
                 }
             }
+            .background(Color(UIColor.systemGroupedBackground))
         }
-        .padding()
-        .navigationTitle("Provider")
         .alert("Supprimer ce fournisseur ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
                 Task {
@@ -67,14 +64,67 @@ struct ProviderDetailView: View {
         }
     }
 
-    // MARK: - helpers
+    // MARK: - Header Card
     
-    private func infoRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value)
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(provider.name)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text("ID: \(provider.id)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .fontDesign(.monospaced)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "building.2.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(.blue)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 24)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
+    }
+    
+    // MARK: - Actions Card
+    
+    private var actionsCard: some View {
+        VStack(spacing: 0) {
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                HStack {
+                    if viewModel.isDeleting {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "trash")
+                            .font(.title3)
+                    }
+                    
+                    Text("Supprimer le fournisseur")
+                        .font(.headline)
+                    
+                    Spacer()
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color.red)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isDeleting)
+        }
+        .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 2)
     }
 }

@@ -37,47 +37,82 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            VStack {
-                if viewModel.isLoading {
-                    ProgressView("Chargement du dashboard...")
-                }
-                else if let error = viewModel.errorMessage {
-                    Text(error)
-                        .foregroundColor(.red)
-                }
-                else if let dashboard = viewModel.dashboard {
-
-                    VStack(alignment: .leading, spacing: 16) {
-                        // Header
-                        headerView
-                        
-                        // Picker mode d'affichage
-                        displayModePicker
-
-                        if displayMode == .pie {
-                            CategoryPieChartView(
-                                categories: dashboard.byCategory,
-                                onCategorySelected: { category in
-                                    navigationPath.append(category)
-                                }
-                            )
-                        } else {
-                            CategoryBarChartView(
-                                categories: dashboard.byCategory,
-                                onCategorySelected: { category in
-                                    navigationPath.append(category)
-                                }
-                            )
+            ZStack(alignment: .bottom) {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        if viewModel.isLoading {
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .scaleEffect(1.2)
+                                Text("Chargement du dashboard...")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.top, 100)
                         }
-                        
-                        scanButton
+                        else if let error = viewModel.errorMessage {
+                            VStack(spacing: 16) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.orange)
+                                Text(error)
+                                    .font(.body)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.top, 100)
+                        }
+                        else if let dashboard = viewModel.dashboard {
+                            VStack(spacing: 24) {
+                                // Header Card
+                                headerCard
+                                    .padding(.horizontal)
+                                
+                                // Stats Overview
+                                statsOverview(dashboard: dashboard)
+                                    .padding(.horizontal)
+                                
+                                // Chart Section
+                                chartSection
+                                    .padding(.horizontal)
+                                
+                                // Quick Actions
+                                quickActions
+                                    .padding(.horizontal)
+                                
+                                // Padding pour éviter que le contenu ne soit caché par le bouton flottant
+                                Color.clear
+                                    .frame(height: 100)
+                            }
+                            .padding(.top, 8)
+                        }
+                        else {
+                            VStack(spacing: 16) {
+                                Image(systemName: "doc.text")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.secondary)
+                                Text("Pas de données")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.top, 100)
+                        }
                     }
                 }
-                else {
-                    Text("Pas de données")
+                .background(Color(UIColor.systemGroupedBackground))
+                
+                // Bouton de scan flottant
+                VStack {
+                    Spacer()
+                    floatingScanButton
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 34) // Safe area bottom + padding
                 }
             }
-            .padding()
             .task {
                 await viewModel.loadDashboard(year: selectedYear)
             }
@@ -128,27 +163,16 @@ struct DashboardView: View {
                     ProvidersListView()
                 }
             }
-            // 🎯 TOOLBAR ADAPTÉ PAR PLATEFORME
+            // 🎯 TOOLBAR SIMPLIFIÉ
             .toolbar {
-                #if os(iOS)
-                // iOS : bouton déconnexion en haut à droite
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showLogoutConfirmation = true
                     } label: {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundColor(.secondary)
                     }
                 }
-                #else
-                // macOS : bouton déconnexion avec label
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        showLogoutConfirmation = true
-                    } label: {
-                        Label("Déconnexion", systemImage: "rectangle.portrait.and.arrow.right")
-                    }
-                }
-                #endif
             }
             .confirmationDialog(
                 "Voulez-vous vraiment vous déconnecter ?",
@@ -164,104 +188,211 @@ struct DashboardView: View {
     }
     
     
-    // MARK: - subviews
+    // MARK: - Header Card
     
-    private var headerView: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                HStack(spacing: 8) {
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Dashboard")
-                        .font(.title)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
                     
-                    Picker("Année", selection: $selectedYear) {
-                        ForEach(availableYears, id: \.self) { year in
-                            Text("\(year)").tag(year)
+                    HStack(spacing: 12) {
+                        Text("Année")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Picker("Année", selection: $selectedYear) {
+                            ForEach(availableYears, id: \.self) { year in
+                                Text("\(year)").tag(year)
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .foregroundColor(.primary)
                     }
-                    #if os(iOS)
-                    .pickerStyle(.menu) // iOS : menu contextuel
-                    #else
-                    .pickerStyle(.menu) // macOS : dropdown
-                    #endif
-                    .labelsHidden()
                 }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        }
+    }
+    
+    // MARK: - Stats Overview
+    
+    private func statsOverview(dashboard: DashboardResponse) -> some View {
+        HStack(spacing: 16) {
+            // Total Amount Card
+            VStack(spacing: 8) {
+                Text("Total")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
                 
+                Text(dashboard.globalStats.totalAmountFormatted)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            
+            // Number of Bills Card
+            VStack(spacing: 8) {
+                Text("Factures")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                
+                Text("\(dashboard.globalStats.nbBills)")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        }
+    }
+    
+    // MARK: - Chart Section
+    
+    private var chartSection: some View {
+        VStack(spacing: 16) {
+            // Chart Type Picker
+            HStack {
+                Text("Visualisation")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Picker("Display mode", selection: $displayMode) {
+                    Image(systemName: "chart.pie")
+                        .tag(DisplayMode.pie)
+                    Image(systemName: "chart.bar")
+                        .tag(DisplayMode.bar)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 120)
+            }
+            
+            // Chart Container
+            VStack(spacing: 0) {
                 if let dashboard = viewModel.dashboard {
-                    Text("Total: \(dashboard.globalStats.totalAmountFormatted)")
-                        .font(.headline)
+                    if displayMode == .pie {
+                        CategoryPieChartView(
+                            categories: dashboard.byCategory,
+                            onCategorySelected: { category in
+                                navigationPath.append(category)
+                            }
+                        )
+                    } else {
+                        CategoryBarChartView(
+                            categories: dashboard.byCategory,
+                            onCategorySelected: { category in
+                                navigationPath.append(category)
+                            }
+                        )
+                    }
                 }
             }
-            
-            Spacer()
-            
-            // BOUTONS D'ACTION
-            actionButtons
+            .padding(.vertical, 20)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     
-    private var actionButtons: some View {
-        HStack(spacing: 12) {
-            // Bouton toutes les bills
-            Button {
-                navigationPath.append("all-bills")
-            } label: {
-                Image(systemName: "list.bullet.rectangle")
-                    #if os(iOS)
-                    .font(.title2)
-                    .frame(width: 44, height: 44) // Zone tactile iOS
-                    #else
-                    .font(.title2)
-                    #endif
+    // MARK: - Quick Actions
+    
+    private var quickActions: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Actions rapides")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
             }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
             
-            // Bouton catégories
-            Button {
-                navigationPath.append("categories")
-            } label: {
-                Image(systemName: "tag.fill")
-                    #if os(iOS)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    #else
-                    .font(.title2)
-                    #endif
+            HStack(spacing: 12) {
+                // Toutes les factures
+                Button {
+                    navigationPath.append("all-bills")
+                } label: {
+                    VStack(spacing: 8) {
+                        Image(systemName: "list.bullet.rectangle")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                        
+                        Text("Factures")
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                
+                // Catégories
+                Button {
+                    navigationPath.append("categories")
+                } label: {
+                    VStack(spacing: 8) {
+                        Image(systemName: "tag.fill")
+                            .font(.title2)
+                            .foregroundColor(.green)
+                        
+                        Text("Catégories")
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                
+                // Fournisseurs
+                Button {
+                    navigationPath.append("providers")
+                } label: {
+                    VStack(spacing: 8) {
+                        Image(systemName: "building.2")
+                            .font(.title2)
+                            .foregroundColor(.orange)
+                        
+                        Text("Fournisseurs")
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
             }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
-            
-            // Bouton fournisseurs
-            Button {
-                navigationPath.append("providers")
-            } label: {
-                Image(systemName: "building.2")
-                    #if os(iOS)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    #else
-                    .font(.title2)
-                    #endif
-            }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
         }
-    }
-        
-    private var displayModePicker: some View {
-        Picker("Display mode", selection: $displayMode) {
-            Text("Camembert").tag(DisplayMode.pie)
-            Text("Barres").tag(DisplayMode.bar)
-        }
-        .pickerStyle(.segmented)
-        .padding(.horizontal)
     }
     
-    // 📸 BOUTON DE SCAN - Design engageant
-    private var scanButton: some View {
+    // MARK: - Floating Scan Button
+    
+    private var floatingScanButton: some View {
         Button {
             #if os(iOS)
             showCamera = true
@@ -270,40 +401,42 @@ struct DashboardView: View {
             print("Scan non disponible sur macOS")
             #endif
         } label: {
-            HStack {
+            HStack(spacing: 16) {
                 Image(systemName: "doc.text.viewfinder")
                     .font(.title2)
-                    .fontWeight(.semibold)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Scanner une facture")
                         .font(.headline)
-                    Text("Extraction automatique des données")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.9))
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+//                    Text("Extraction automatique des données")
+//                        .font(.subheadline)
+//                        .foregroundColor(.white.opacity(0.9))
                 }
                 
                 Spacer()
                 
                 Image(systemName: "camera.fill")
                     .font(.title3)
+                    .foregroundColor(.white)
             }
-            .padding()
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 18)
             .background(
                 LinearGradient(
-                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                    colors: [Color.blue, Color.blue.opacity(0.85)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
             )
-            .foregroundColor(.white)
-            .cornerRadius(12)
-            .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.blue.opacity(0.3), radius: 20, x: 0, y: 8)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal)
-        .padding(.top, 8)
     }
 }
 

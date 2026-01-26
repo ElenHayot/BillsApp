@@ -49,30 +49,27 @@ struct CategoryFormView: View {
     }
     
     var body: some View {
-        
-        NavigationStack {
-            VStack(spacing: 20) {
-                formContent
-                
-                actionButtons
-                    .padding()
-            }
-            .navigationTitle(isEditing ? "Éditer" : "Nouvelle catégorie")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Annuler") { dismiss() }
-                }
-                // Barre d'outils clavier iOS
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("OK") {
-                        focusedField = nil
-                    }
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Formulaire
+                    formCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                    
+                    // Actions
+                    actionsCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                        .padding(.bottom, 100)
                 }
             }
-            #endif
+            .background(Color(UIColor.systemGroupedBackground))
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -91,113 +88,209 @@ struct CategoryFormView: View {
         }
     }
     
-    // MARK: - subviews
+    // MARK: - Header Card
     
-    private var formContent: some View {
-        // Champ couleur
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Color")
-                .font(.headline)
-            
+    private var headerCard: some View {
+        VStack(spacing: 0) {
             HStack {
-                // Aperçu de la couleur sélectionnée
-                Circle()
-                    .fill(Color(hex: selectedColor))
-                    .frame(width: 40, height: 40)
-                
-                Text(selectedColor)
-                    .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isEditing ? "Éditer la catégorie" : "Nouvelle catégorie")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    if isEditing {
+                        Text("Modifie la couleur et le nom de la catégorie")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("Crée une nouvelle catégorie pour organiser tes factures")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
                 
                 Spacer()
                 
-                // Bouton pour ouvrir le color picker
-                Button {
-                    showColorPicker.toggle()
-                } label: {
-                    Image(systemName: "paintpalette.fill")
-                        .font(.title2)
+                Button("Annuler") {
+                    dismiss()
                 }
+                .foregroundColor(.blue)
+                .font(.headline)
             }
-            .padding(.horizontal, 4)
-            
-            // Grid de couleurs
-            if showColorPicker {
-                LazyVGrid(columns: [
-                    GridItem(.adaptive(minimum: 50))
-                ], spacing: 12) {
-                    ForEach(availableColors, id: \.self) { color in
-                        Circle()
-                            .fill(Color(hex: color))
-                            .frame(width: 50, height: 50)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(
-                                        selectedColor == color ? Color.primary : Color.clear,
-                                        lineWidth: 3
-                                    )
-                            )
-                            .onTapGesture {
-                                selectedColor = color
-                                showColorPicker = false
-                            }
-                    }
-                }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-            }
-            
-            Spacer()
-            
-            Text("New Category")
-                .font(.largeTitle)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // Champ nom
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Name")
-                    .font(.headline)
-                
-                TextField("Category name", text: $name)
-                    #if os(iOS)
-                    .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.words)
-                    .focused($focusedField, equals: .name)
-                    #else
-                    .textFieldStyle(.roundedBorder)
-                    #endif
-            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     
-    private var actionButtons: some View {
+    // MARK: - Form Card
+    
+    private var formCard: some View {
+        VStack(spacing: 20) {
+            // Couleur
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Couleur")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                HStack(spacing: 16) {
+                    // Aperçu de la couleur
+                    Circle()
+                        .fill(Color(hex: selectedColor))
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                    
+                    Text(selectedColor)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .fontDesign(.monospaced)
+                    
+                    Spacer()
+                    
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showColorPicker.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "paintpalette.fill")
+                                .font(.title3)
+                            Text(showColorPicker ? "Masquer" : "Choisir")
+                                .font(.caption)
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.blue.opacity(0.1))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                // Grid de couleurs
+                if showColorPicker {
+                    LazyVGrid(columns: [
+                        GridItem(.adaptive(minimum: 50))
+                    ], spacing: 12) {
+                        ForEach(availableColors, id: \.self) { color in
+                            Circle()
+                                .fill(Color(hex: color))
+                                .frame(width: 50, height: 50)
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(
+                                            selectedColor == color ? Color.primary : Color.clear,
+                                            lineWidth: 3
+                                        )
+                                )
+                                .onTapGesture {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedColor = color
+                                        showColorPicker = false
+                                    }
+                                }
+                        }
+                    }
+                    .padding(.top, 12)
+                }
+            }
+            
+            // Nom
+            formField(
+                title: "Nom",
+                placeholder: "Nom de la catégorie",
+                text: $name,
+                field: .name
+            )
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(UIColor.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - Actions Card
+    
+    private var actionsCard: some View {
         HStack(spacing: 16) {
-            #if os(macOS)
             Button("Annuler") {
                 dismiss()
             }
-            .buttonStyle(.bordered)
-            #endif
+            .foregroundColor(.blue)
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .buttonStyle(.plain)
             
             Button {
                 Task {
                     await saveCategory()
                 }
             } label: {
-                if viewModel.isSaving {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                } else {
+                HStack {
+                    if viewModel.isSaving {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: isEditing ? "square.and.arrow.down" : "plus")
+                            .font(.title3)
+                    }
+                    
                     Text(isEditing ? "Sauvegarder" : "Créer")
-                        .frame(maxWidth: .infinity)
+                        .font(.headline)
                 }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: isFormValid ? [Color.blue, Color.blue.opacity(0.85)] : [Color.gray, Color.gray.opacity(0.85)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: isFormValid ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 2)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
             .disabled(!isFormValid || viewModel.isSaving)
         }
     }
     
     // MARK: - helpers
+    
+    private func formField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>,
+        field: Field
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            TextField(placeholder, text: text)
+                #if os(iOS)
+                .focused($focusedField, equals: field)
+                .autocapitalization(.words)
+                #endif
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(UIColor.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
     
     private var isFormValid: Bool {
         !name.isEmpty &&

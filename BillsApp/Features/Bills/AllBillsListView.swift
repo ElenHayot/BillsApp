@@ -62,18 +62,28 @@ struct AllBillsListView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            
-            // Header
-            headerView
-            
-            // Section filtres (dépliable)
-            if showFilters {
-                filtersView
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Section filtres (dépliable)
+                    if showFilters {
+                        filtersCard
+                            .padding(.horizontal)
+                            .padding(.top, 16)
+                    }
+                    
+                    // Contenu
+                    contentView
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                }
             }
-
-            // Contenu
-            contentView
+            .background(Color(UIColor.systemGroupedBackground))
         }
         .task {
             await viewModel.loadBills(year: selectedYear)
@@ -120,204 +130,253 @@ struct AllBillsListView: View {
         }
     }
     
-    // MARK: - subviews
+    // MARK: - Header Card
     
-    private var headerView: some View {
-        // Header avec titre et bouton "+"
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Toutes les factures")
-                    .font(.largeTitle)
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Toutes les factures")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    HStack(spacing: 12) {
+                        Text("Année")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Picker("Année", selection: $selectedYear) {
+                            ForEach(availableYears, id: \.self) { year in
+                                Text("\(year)").tag(year)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .foregroundColor(.primary)
+                    }
+                }
                 
-                Picker("Année", selection: $selectedYear) {
-                    ForEach(availableYears, id: \.self) { year in
-                        Text("\(year)").tag(year)
+                Spacer()
+                
+                HStack(spacing: 12) {
+                    // Bouton filtres
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showFilters.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: showFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                                .font(.title2)
+                            if activeFiltersCount > 0 {
+                                Text("\(activeFiltersCount)")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .foregroundColor(activeFiltersCount > 0 ? .blue : .secondary)
+                        .frame(width: 44, height: 44)
                     }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-            }
-            
-            Spacer()
-            
-            // Bouton pour afficher/masquer les filtres
-            Button {
-                withAnimation {
-                    showFilters.toggle()
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: showFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                    if activeFiltersCount > 0 {
-                        Text("\(activeFiltersCount)")
-                            .font(.caption2)
-                            .fontWeight(.bold)
+                    .buttonStyle(.plain)
+                    
+                    // Bouton créer
+                    Button {
+                        showCreateForm = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                            .frame(width: 44, height: 44)
                     }
+                    .buttonStyle(.plain)
                 }
-                #if os(iOS)
-                .font(.title2)
-                .frame(width: 44, height: 44)
-                #else
-                .font(.title2)
-                #endif
-                .foregroundColor(activeFiltersCount > 0 ? .blue : .primary)
             }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
-            
-            // Bouton créer
-            Button {
-                showCreateForm = true
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    #if os(iOS)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    #else
-                    .font(.title2)
-                    #endif
-            }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
-        .padding(.horizontal)
-        .padding(.top)
-        .padding(.bottom, 8)
     }
     
-    private var filtersView: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            
-            Divider()
-            
-            Text("Filtres")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            // Filtre par catégorie
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Catégorie")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+    // MARK: - Filters Card
+    
+    private var filtersCard: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Filtres")
+                    .font(.headline)
+                    .foregroundColor(.primary)
                 
-                if viewModel.categories.isEmpty {
-                    Text("Chargement des catégories...")
-                        .foregroundColor(.secondary)
-                        .font(.caption)
-                } else {
-                    Picker("Catégorie", selection: $selectedCategoryId) {
-                        Text("Toutes les catégories").tag(nil as Int?)
-                        ForEach(viewModel.categories) { category in
-                            HStack(spacing: 8) {
-                                Circle()
-                                    .fill(Color(hex: category.color))
-                                    .frame(width: 12, height: 12)
-                                Text(category.name)
-                            }
-                            .tag(category.id as Int?)
-                        }
+                Spacer()
+                
+                if activeFiltersCount > 0 {
+                    Button {
+                        selectedCategoryId = nil
+                        minAmount = ""
+                        maxAmount = ""
+                    } label: {
+                        Text("Réinitialiser")
+                            .font(.caption)
+                            .foregroundColor(.red)
                     }
-                    .pickerStyle(.menu)
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal)
             
-            // Filtres par montant
-            #if os(iOS)
-            // iOS : empilés verticalement pour petit écran
             VStack(spacing: 16) {
-                amountFilterField(title: "Montant min", text: $minAmount)
-                amountFilterField(title: "Montant max", text: $maxAmount)
-            }
-            .padding(.horizontal)
-            #else
-            // macOS : côte à côte
-            HStack(spacing: 16) {
-                amountFilterField(title: "Montant min", text: $minAmount)
-                amountFilterField(title: "Montant max", text: $maxAmount)
-            }
-            .padding(.horizontal)
-            #endif
-            
-            // Bouton pour réinitialiser les filtres
-            if activeFiltersCount > 0 {
-                Button {
-                    selectedCategoryId = nil
-                    minAmount = ""
-                    maxAmount = ""
-                } label: {
-                    Text("Réinitialiser les filtres")
-                        .font(.caption)
-                        .foregroundColor(.red)
+                // Filtre par catégorie
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Catégorie")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    if viewModel.categories.isEmpty {
+                        Text("Chargement des catégories...")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    } else {
+                        Picker("Catégorie", selection: $selectedCategoryId) {
+                            Text("Toutes les catégories").tag(nil as Int?)
+                            ForEach(viewModel.categories) { category in
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(Color(hex: category.color))
+                                        .frame(width: 12, height: 12)
+                                    Text(category.name)
+                                }
+                                .tag(category.id as Int?)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
                 }
-                .padding(.horizontal)
+                
+                // Filtres par montant
+                #if os(iOS)
+                VStack(spacing: 16) {
+                    amountFilterField(title: "Montant min", text: $minAmount)
+                    amountFilterField(title: "Montant max", text: $maxAmount)
+                }
+                #else
+                HStack(spacing: 16) {
+                    amountFilterField(title: "Montant min", text: $minAmount)
+                    amountFilterField(title: "Montant max", text: $maxAmount)
+                }
+                #endif
             }
-            
-            Divider()
         }
-        .padding(.bottom, 8)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(UIColor.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         .transition(.move(edge: .top).combined(with: .opacity))
     }
     
     @ViewBuilder
     private var contentView: some View {
         if viewModel.isLoading {
-            ProgressView("Chargement des factures…")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Chargement des factures...")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else if let error = viewModel.errorMessage {
-            ErrorView(
-                message: error,
-                retryAction: {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 48))
+                    .foregroundColor(.orange)
+                Text(error)
+                    .font(.body)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                Button("Réessayer") {
                     Task { await viewModel.loadBills(year: selectedYear) }
                 }
-            )
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else if viewModel.bills.isEmpty {
             if activeFiltersCount > 0 {
-                EmptyStateView(
-                    icon: "magnifyingglass",
-                    title: "Aucun résultat",
-                    message: "Aucune facture ne correspond à tes critères de recherche.",
-                    actionTitle: "Réinitialiser les filtres",
-                    action: {
+                VStack(spacing: 16) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 48))
+                        .foregroundColor(.secondary)
+                    Text("Aucun résultat")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Text("Aucune facture ne correspond à tes critères de recherche.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button("Réinitialiser les filtres") {
                         selectedCategoryId = nil
                         minAmount = ""
                         maxAmount = ""
                     }
-                )
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 60)
             } else {
-                EmptyStateView(
-                    title: "Aucune facture",
-                    message: "Tu n'as pas encore de facture enregistrée pour \(selectedYear).",
-                    actionTitle: "Ajouter une facture",
-                    action: {
+                VStack(spacing: 16) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 48))
+                        .foregroundColor(.secondary)
+                    Text("Aucune facture")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Text("Tu n'as pas encore de facture enregistrée pour \(selectedYear).")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button("Ajouter une facture") {
                         showCreateForm = true
                     }
-                )
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 60)
             }
         }
         else {
-            List(filteredBills) { bill in
-                NavigationLink(value: bill.bill) {
-                    BillRowView(
-                        bill: bill.bill,
-                        categoryColor: bill.categoryColor ?? "#999999", // Couleur par défaut
-                        onEdit: {
-                            billToEdit = bill.bill
-                        },
-                        onDelete: {
-                            billToDelete = bill.bill
-                            showDeleteConfirmation = true
-                        }
-                    )
+            VStack(spacing: 0) {
+                ForEach(filteredBills) { bill in
+                    NavigationLink(value: bill.bill) {
+                        BillRowView(
+                            bill: bill.bill,
+                            categoryColor: bill.categoryColor ?? "#999999",
+                            onEdit: {
+                                billToEdit = bill.bill
+                            },
+                            onDelete: {
+                                billToDelete = bill.bill
+                                showDeleteConfirmation = true
+                            }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 4)
+                    
+                    if bill.bill.id != filteredBills.last?.bill.id {
+                        Divider()
+                            .padding(.leading, 16)
+                    }
                 }
             }
-            #if os(iOS)
-            .listStyle(.insetGrouped)
-            #endif
+            .padding(.vertical, 8)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     

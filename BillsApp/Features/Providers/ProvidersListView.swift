@@ -19,14 +19,22 @@ struct ProvidersListView: View {
     @State private var showDeleteConfirmation = false
 
     var body: some View {
-        VStack(alignment: .leading) {
-            // Header
-            headerView
-            
-            contentView
-            
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Contenu
+                    contentView
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                }
+            }
+            .background(Color(UIColor.systemGroupedBackground))
         }
-        .padding()
         .task {
             await viewModel.loadProviders()
         }
@@ -62,78 +70,118 @@ struct ProvidersListView: View {
         }
     }
     
-    // MARK: - subviews
-    private var headerView: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-               Text("Fournisseurs")
-                   .font(.largeTitle)
-           }
-            
-            Spacer()
-            
-            // Bouton créer
-            Button {
-                showCreateForm = true
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    #if os(iOS)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    #else
-                    .font(.title2)
-                    #endif
+    // MARK: - Header Card
+    
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Fournisseurs")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text("Gère tes fournisseurs de factures")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    showCreateForm = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
             }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
-        .padding(.horizontal)
-        .padding(.top)
-        .padding(.bottom, 8)
     }
     
     @ViewBuilder
     private var contentView: some View {
         if viewModel.isLoading {
-            ProgressView("Chargement des fournisseurs…")
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Chargement des fournisseurs...")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else if let error = viewModel.errorMessage {
-            ErrorView(
-                message: error,
-                retryAction: {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 48))
+                    .foregroundColor(.orange)
+                Text(error)
+                    .font(.body)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                Button("Réessayer") {
                     Task { await viewModel.loadProviders() }
                 }
-            )
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else if viewModel.providers.isEmpty {
-           EmptyStateView(
-                    icon: "doc.text",
-                    title: "Aucun fournisseur",
-                    message: "Tu n'as pas encore de fournisseur enregistré.",
-                    actionTitle: "Ajouter un fournisseur",
-                    action: {
-                        showCreateForm = true
-                    }
-               )
+            VStack(spacing: 16) {
+                Image(systemName: "doc.text")
+                    .font(.system(size: 48))
+                    .foregroundColor(.secondary)
+                Text("Aucun fournisseur")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Text("Tu n'as pas encore de fournisseur enregistré.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                Button("Ajouter un fournisseur") {
+                    showCreateForm = true
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         } else {
-            List(viewModel.providers) { provider in
-                NavigationLink(value: provider) {
-                    ProviderRowView(
-                        provider: provider,
-                        onEdit: {
-                            providerToEdit = provider
-                        },
-                        onDelete: {
-                            providerToDelete = provider
-                            showDeleteConfirmation = true
-                        }
-                    )
+            VStack(spacing: 0) {
+                ForEach(viewModel.providers) { provider in
+                    NavigationLink(value: provider) {
+                        ProviderRowView(
+                            provider: provider,
+                            onEdit: {
+                                providerToEdit = provider
+                            },
+                            onDelete: {
+                                providerToDelete = provider
+                                showDeleteConfirmation = true
+                            }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    
+                    if provider.id != viewModel.providers.last?.id {
+                        Divider()
+                            .padding(.leading, 16)
+                    }
                 }
             }
-            #if os(iOS)
-            .listStyle(.insetGrouped)
-            #endif
+            .padding(.vertical, 8)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     

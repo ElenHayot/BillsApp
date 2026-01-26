@@ -16,13 +16,21 @@ struct CategoriesListView: View {
     @State private var showDeleteConfirmation = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            
-            // Header
-            headerView
-            
-            // Contenu
-            contentView
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Contenu
+                    contentView
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                }
+            }
+            .background(Color(UIColor.systemGroupedBackground))
         }
         .task {
             await viewModel.loadCategories()
@@ -61,76 +69,116 @@ struct CategoriesListView: View {
         }
     }
     
-    // MARK: - subviews
+    // MARK: - Header Card
     
-    private var headerView: some View {
-        // Header avec titre et bouton "+"
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Categories")
-                    .font(.largeTitle)
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Catégories")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text("Organise tes factures par catégories")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    showCreateForm = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
             }
-            Spacer()
-            
-            Button {
-                showCreateForm = true
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    #if os(iOS)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    #else
-                    .font(.title2)
-                    #endif
-            }
-            #if os(iOS)
-            .buttonStyle(.borderless)
-            #endif
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
-        .padding(.horizontal)
-        .padding(.top)
-        .padding(.bottom, 8)
     }
     
     @ViewBuilder
     private var contentView: some View {
         if viewModel.isLoading {
-            ProgressView("Loading categories…")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Chargement des catégories...")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else if let error = viewModel.errorMessage {
-            ErrorView(
-                message: error,
-                retryAction: {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 48))
+                    .foregroundColor(.orange)
+                Text(error)
+                    .font(.body)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                Button("Réessayer") {
                     Task { await viewModel.loadCategories() }
                 }
-            )
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else if viewModel.categories.isEmpty {
-            EmptyStateView(
-                icon: "tag.slash",
-                title: "Aucune catégorie",
-                message: "Commence par créer au moins une catégorie pour organiser tes factures.",
-                actionTitle: "Créer une catégorie",
-                action: { showCreateForm = true }
-            )
+            VStack(spacing: 16) {
+                Image(systemName: "tag.slash")
+                    .font(.system(size: 48))
+                    .foregroundColor(.secondary)
+                Text("Aucune catégorie")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Text("Commence par créer au moins une catégorie pour organiser tes factures.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                Button("Créer une catégorie") {
+                    showCreateForm = true
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
         }
         else {
-            List(viewModel.categories) { category in
-                CategoryRowView(
-                    category: category,
-                    onEdit: {
-                        categoryToEdit = category
-                    },
-                    onDelete: {
-                        categoryToDelete = category
-                        showDeleteConfirmation = true
+            VStack(spacing: 0) {
+                ForEach(viewModel.categories) { category in
+                    CategoryRowView(
+                        category: category,
+                        onEdit: {
+                            categoryToEdit = category
+                        },
+                        onDelete: {
+                            categoryToDelete = category
+                            showDeleteConfirmation = true
+                        }
+                    )
+                    
+                    if category.id != viewModel.categories.last?.id {
+                        Divider()
+                            .padding(.leading, 16)
                     }
-                )
+                }
             }
-            #if os(iOS)
-            .listStyle(.insetGrouped)
-            #endif
+            .padding(.vertical, 8)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     

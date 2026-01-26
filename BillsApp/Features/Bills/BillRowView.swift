@@ -14,47 +14,75 @@ struct BillRowView: View {
     let onDelete: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             // Pastille couleur catégorie
             Circle()
                 .fill(Color(hex: categoryColor))
-                .frame(width: 10, height: 10)
-            VStack(alignment: .leading) {
+                .frame(width: 12, height: 12)
+            
+            // Contenu principal
+            VStack(alignment: .leading, spacing: 4) {
                 Text(bill.title)
                     .font(.headline)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
                 
-                Text(String(bill.id)).font(Font.caption.italic())
-
-                Text(bill.dateFormatted)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack(spacing: 8) {
+                    Text(bill.dateFormatted)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    if let providerName = bill.providerName, !providerName.isEmpty {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(providerName)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                }
             }
-
+            
             Spacer()
-
-            Text(bill.amountFormatted)
-                .bold()
             
-            // Bouton éditer
-            Button {
-                onEdit()
-            } label: {
-                Image(systemName: "pencil.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(.blue)
+            // Montant
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(bill.amountFormatted)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                if let comment = bill.comment, !comment.isEmpty {
+                    Image(systemName: "text.bubble")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
-            .buttonStyle(.plain)
             
-            // Bouton supprimer
-            Button {
-                onDelete()
-            } label: {
-                Image(systemName: "trash.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(.red)
+            // Actions
+            HStack(spacing: 8) {
+                Button {
+                    onEdit()
+                } label: {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
     }
 }
