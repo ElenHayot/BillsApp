@@ -485,10 +485,26 @@ final class APIClient {
     // MARK: - Providers
     
     /// Récupère toutes les  fournisseurs
-    func fetchProviders() async throws -> [Provider] {
+    func fetchProviders(
+        name: String? = nil,
+        page: Int = 1,
+        pageSize: Int = 20
+    ) async throws -> [Provider] {
         var url = baseURL
         url.append(path: "providers/")
         
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "page_size", value: "\(pageSize)")
+        ]
+        
+        if let name = name {
+            queryItems.append(URLQueryItem(name: "name", value: "\(name)"))
+        }
+        
+        // Ajouter les query items
+        url.append(queryItems: queryItems)
+                            
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -714,6 +714,11 @@ struct ScanProcessingView: View {
             return
         }
         
+        // Mettre à jour le selectedProviderId si on trouve un provider correspondant
+        if selectedProviderId == nil {
+            selectedProviderId = await detecteProviderId(name: providerName)
+        }
+        
         // 🆕 Vérifier si on doit créer un provider
         if shouldCreateProvider() {
             providerToCreate = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -735,6 +740,14 @@ struct ScanProcessingView: View {
             onSaved()
             dismiss()
         }
+    }
+    
+    // Vérifie s'il existe un provider correspondant au nom détecté
+    private func detecteProviderId(name: String) async -> Int? {
+        if let existingProvider = await viewModel.fetchProvider(name: name) {
+            return existingProvider.id
+        }
+        return nil
     }
     
     // 🆕 Logique de détection de provider à créer

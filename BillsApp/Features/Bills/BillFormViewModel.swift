@@ -43,6 +43,21 @@ final class BillFormViewModel: ObservableObject {
         isLoading = false
     }
     
+    func fetchProvider(name: String) async -> Provider? {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            let provider = try await APIClient.shared.fetchProviders(name: name).first
+            isLoading = false
+            return provider
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
+            return nil
+        }
+    }
+    
     func createBill(
         title: String,
         amount: Decimal,
