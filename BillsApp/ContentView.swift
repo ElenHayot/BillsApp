@@ -6,25 +6,40 @@
 //
 import SwiftUI
 
-// MARK: - Root View
-/// Vue racine qui décide quelle vue afficher selon l'état d'authentification
 struct ContentView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @State private var showSettings = false
+    @State private var showUserEdit = false
+    @State private var showLogoutConfirmation = false
+    @State private var navigationPath = NavigationPath()
     
     var body: some View {
         Group {
-            if authViewModel.isAuthenticated {
-                // Utilisateur connecté → Dashboard
-                DashboardView()
+            if authViewModel.isCheckingUsers {
+                ProgressView("Chargement...")
+            } else if authViewModel.isAuthenticated {
+                MainNavigationView(navigationPath: $navigationPath)
+                .sheet(isPresented: $showSettings) {
+                    SettingsView()
+                }
+                .sheet(isPresented: $showUserEdit) {
+                    UserEditView()
+                }
+                .alert("Se déconnecter ?", isPresented: $showLogoutConfirmation) {
+                    Button("Se déconnecter", role: .destructive) {
+                        authViewModel.logout()
+                        showSettings = false
+                    }
+                    Button("Annuler", role: .cancel) {}
+                } message: {
+                    Text("Êtes-vous sûr de vouloir vous déconnecter ?")
+                }
             } else if authViewModel.hasUsers {
-                // Des utilisateurs existent → Login
                 LoginView()
             } else {
-                // Aucun utilisateur → Création du premier user
                 UserFormView()
             }
         }
-        // Animation fluide lors du changement d'état
         .animation(.easeInOut(duration: 0.3), value: authViewModel.isAuthenticated)
     }
 }

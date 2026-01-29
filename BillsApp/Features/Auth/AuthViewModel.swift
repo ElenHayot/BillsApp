@@ -15,6 +15,9 @@ class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var accessToken: String?
     @Published var hasUsers = false
+    @Published var currentUser: User?
+    @Published var tokenType: String?
+    @Published var isCheckingUsers = true
     
     init() {
         Task {
@@ -47,10 +50,12 @@ class AuthViewModel: ObservableObject {
             accessToken = token
             isAuthenticated = true
             hasUsers = true
+            isCheckingUsers = false
         } else if KeychainManager.shared.getRefreshToken() != nil {
             // Si on a seulement un refresh token, on peut tenter un refresh
             await attemptTokenRefresh()
             hasUsers = true
+            isCheckingUsers = false
         } else {
             print("❓ Pas de token, vérification des utilisateurs...")
             // Si pas de token ni de refresh, on vérifie qu'il existe au moins un compte utilisateur
@@ -87,6 +92,8 @@ class AuthViewModel: ObservableObject {
             
             // Les tokens sont déjà sauvegardés dans APIClient.login()
             accessToken = response.accessToken
+            currentUser = response.currentUser
+            tokenType = response.tokenType
             isAuthenticated = true
             
             print("✅ Login réussi")
@@ -97,6 +104,7 @@ class AuthViewModel: ObservableObject {
         }
         
         isLoading = false
+        isCheckingUsers = false
     }
 
     // MARK: - Logout

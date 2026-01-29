@@ -29,120 +29,180 @@ struct UserFormView: View {
     
     // Layout pour macOS
     private var macOSLayout: some View {
-        VStack(spacing: 24) {
-            headerSection
-            formSection
-            passwordHint
-            createButton
-            
-            if !errorMessage.isEmpty {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-                    .font(.caption)
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Formulaire
+                    formCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                    
+                    // Actions
+                    actionsCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                        .padding(.bottom, 100)
+                }
             }
+            .background(Color(UIColor.systemGroupedBackground))
         }
         .frame(width: 400)
-        .padding(40)
     }
     
     // Layout pour iOS
     private var iOSLayout: some View {
-        NavigationView {
+        ZStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    headerSection
-                    formSection
-                    passwordHint
-                    createButton
+                LazyVStack(spacing: 0) {
+                    // Header Card
+                    headerCard
+                        .padding(.horizontal)
+                        .padding(.top, 8)
                     
-                    if !errorMessage.isEmpty {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                    }
+                    // Formulaire
+                    formCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                    
+                    // Actions
+                    actionsCard
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                        .padding(.bottom, 100)
                 }
-                .padding()
             }
-            .navigationTitle("Bienvenue")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
-            #endif
+            .background(Color(UIColor.systemGroupedBackground))
+        }
+        .navigationTitle("Bienvenue")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+        #endif
+    }
+    
+    // MARK: - Header Card
+    
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 16) {
+                Image(systemName: "person.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.blue)
+                
+                VStack(spacing: 8) {
+                    Text("Créer votre compte")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text("Aucun utilisateur n'existe encore")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 24)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
     
-    // Section d'en-tête
-    private var headerSection: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.accentColor)
+    // MARK: - Form Card
+    
+    private var formCard: some View {
+        VStack(spacing: 20) {
+            // Email
+            formField(
+                title: "Email",
+                placeholder: "votre@email.com",
+                text: $email,
+                keyboardType: .emailAddress
+            )
             
-            Text("Créer votre compte")
-                .font(.title)
-                .fontWeight(.bold)
+            // Mot de passe
+            formSecureField(
+                title: "Mot de passe",
+                placeholder: "Au moins 8 caractères",
+                text: $password
+            )
             
-            Text("Aucun utilisateur n'existe encore")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            // Confirmation du mot de passe
+            formSecureField(
+                title: "Confirmer le mot de passe",
+                placeholder: "Répétez le mot de passe",
+                text: $confirmPassword
+            )
+            
+            // Indicateur de force du mot de passe
+            passwordHint
         }
-        .padding(.bottom, 8)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(UIColor.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
     
-    // Formulaire
-    private var formSection: some View {
+    // MARK: - Actions Card
+    
+    private var actionsCard: some View {
         VStack(spacing: 16) {
-            #if os(macOS)
-            TextField("Email", text: $email)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.emailAddress)
-            
-            SecureField("Mot de passe", text: $password)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.newPassword)
-            
-            SecureField("Confirmer le mot de passe", text: $confirmPassword)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.newPassword)
-            #else
-            TextField("Email", text: $email)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-            
-            SecureField("Mot de passe", text: $password)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.newPassword)
-            
-            SecureField("Confirmer le mot de passe", text: $confirmPassword)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.newPassword)
-            #endif
-        }
-        
-    }
-    
-    // Bouton de création
-    private var createButton: some View {
-        Button(action: createUser) {
-            if isLoading {
-                ProgressView()
-                    #if os(iOS)
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    #endif
-                    .frame(maxWidth: .infinity)
-            } else {
-                Text("Créer mon compte")
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
+            // Message d'erreur
+            if !errorMessage.isEmpty {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                    Text(errorMessage)
+                        .font(.body)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color.red.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            
+            // Bouton de création
+            Button(action: createUser) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "person.badge.plus")
+                            .font(.title3)
+                    }
+                    
+                    Text("Créer mon compte")
+                        .font(.headline)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: isFormValid ? [Color.blue, Color.blue.opacity(0.85)] : [Color.gray, Color.gray.opacity(0.85)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+            .disabled(isLoading || !isFormValid)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .disabled(isLoading || !isFormValid)
+        .shadow(color: isFormValid ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 2)
     }
     
-    // Affichage simple des règles
+    // Affichage des règles de mot de passe
     @ViewBuilder
     private var passwordHint: some View {
         if !password.isEmpty && password.count < 8 {
@@ -152,11 +212,61 @@ struct UserFormView: View {
                 Text("Au moins 8 caractères requis")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                Spacer()
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
     
     // MARK: - helpers
+    
+    private func formField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>,
+        keyboardType: UIKeyboardType = .default
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            TextField(placeholder, text: text)
+                #if os(iOS)
+                .keyboardType(keyboardType)
+                .textContentType(.emailAddress)
+                .autocapitalization(.none)
+                #endif
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(UIColor.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+    
+    private func formSecureField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            SecureField(placeholder, text: text)
+                #if os(iOS)
+                .textContentType(.newPassword)
+                #endif
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(UIColor.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
     
     // Validation du formulaire
     private var isFormValid: Bool {

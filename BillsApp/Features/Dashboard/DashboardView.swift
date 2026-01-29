@@ -9,11 +9,10 @@ import SwiftUI
 struct DashboardView: View {
 
     @EnvironmentObject var authViewModel: AuthViewModel
-    @State private var showLogoutConfirmation = false
-    
     @StateObject private var viewModel = DashboardViewModel()
+    @Binding var navigationPath: NavigationPath
+    
     @State private var displayMode: DisplayMode = .pie
-    @State private var navigationPath = NavigationPath()
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date()) //Année actuelle par défaut
 
     // 📸 États pour le scan de facture
@@ -34,9 +33,8 @@ struct DashboardView: View {
         return Array((currentYear - 9)...currentYear).reversed() // De currentYear à currentYear-9
     }
 
-
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+//        NavigationStack(path: $navigationPath) {
             ZStack(alignment: .bottom) {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -68,8 +66,8 @@ struct DashboardView: View {
                         else if let dashboard = viewModel.dashboard {
                             VStack(spacing: 24) {
                                 // Header Card
-                                headerCard
-                                    .padding(.horizontal)
+//                                headerCard
+//                                    .padding(.horizontal)
                                 
                                 // Stats Overview
                                 statsOverview(dashboard: dashboard)
@@ -144,47 +142,7 @@ struct DashboardView: View {
                 }
             }
             #endif
-            .navigationDestination(for: DashboardCategoryStats.self) { category in
-                BillsListView(
-                    categoryId: category.categoryId,
-                    categoryName: category.categoryName,
-                    categoryColor: category.categoryColor,
-                    year: selectedYear
-                )
-            }
-            .navigationDestination(for: String.self) { destination in
-                if destination == "categories" {
-                    CategoriesListView()
-                } else if destination == "all-bills" {
-                    AllBillsListView(
-                        year: selectedYear // ✅ Utilise l'année sélectionnée
-                    )
-                } else if destination == "providers" {
-                    ProvidersListView()
-                }
-            }
-            // 🎯 TOOLBAR SIMPLIFIÉ
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showLogoutConfirmation = true
-                    } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .confirmationDialog(
-                "Voulez-vous vraiment vous déconnecter ?",
-                isPresented: $showLogoutConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Se déconnecter", role: .destructive) {
-                    authViewModel.logout()
-                }
-                Button("Annuler", role: .cancel) {}
-            }
-        }
+//        }
     }
     
     
@@ -288,7 +246,26 @@ struct DashboardView: View {
             }
             
             // Chart Container
-            VStack(spacing: 0) {
+            VStack(spacing: 16) {
+                // Header du container avec titre et contrôles
+                HStack {
+                    Text("Répartition par catégorie")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Picker("Année", selection: $selectedYear) {
+                        ForEach(availableYears, id: \.self) { year in
+                            Text("\(year)").tag(year)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .foregroundColor(.primary)
+                }
+                
+                // Chart content
                 if let dashboard = viewModel.dashboard {
                     if displayMode == .pie {
                         CategoryPieChartView(
@@ -307,6 +284,7 @@ struct DashboardView: View {
                     }
                 }
             }
+            .padding(.horizontal, 20)
             .padding(.vertical, 20)
             .background(Color(UIColor.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16))

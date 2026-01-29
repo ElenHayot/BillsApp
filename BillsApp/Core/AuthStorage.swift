@@ -9,6 +9,7 @@ final class AuthStorage {
     static let shared = AuthStorage()
 
     var accessToken: String?
+    var currentUser: User?
 
     private init() {}
 }

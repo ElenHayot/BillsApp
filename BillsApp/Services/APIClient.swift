@@ -16,8 +16,11 @@ final class APIClient {
     // Lock pour éviter les refreshs multiples simultanés
     private var isRefreshing = false
     private var refreshTask: Task<String, Error>?
+    private let decoder = JSONDecoder()
 
-    private init() {}
+    private init() {
+        decoder.dateDecodingStrategy = .iso8601
+    }
     
     // MARK: - Generic Request avec Auto-Refresh
     /// Méthode générique qui gère automatiquement le refresh si token expiré
@@ -37,8 +40,7 @@ final class APIClient {
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
         }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        
         
         // Si 401 : le token est expiré, on tente un refresh
         if http.statusCode == 401 {
@@ -197,11 +199,12 @@ final class APIClient {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw URLError(.userAuthenticationRequired)
         }
-
-        let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
+        
+        let loginResponse = try decoder.decode(LoginResponse.self, from: data)
         
         // Sauvegarder les tokens
         AuthStorage.shared.accessToken = loginResponse.accessToken
+        AuthStorage.shared.currentUser = loginResponse.currentUser
         KeychainManager.shared.saveRefreshToken(loginResponse.refreshToken)
         
         return loginResponse
@@ -387,7 +390,6 @@ final class APIClient {
         categoryId: Int,
         year: Int
     ) async throws -> [Bill] {
-        print("in fetchBillsByCategory, categoryId: \(categoryId), year: \(year)")
         var url = baseURL
         url.append(path: "bills/")
         url.append(queryItems: [
