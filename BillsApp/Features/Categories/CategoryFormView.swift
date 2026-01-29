@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CategoryFormView: View {
     
-    let category: Category? // nil = création, non-nil = édition
+    let category: Category? // nil = creating, non-nil = editing
     let onSaved: (Category) -> Void
     
     @Environment(\.dismiss) private var dismiss
@@ -19,14 +19,13 @@ struct CategoryFormView: View {
     @State private var selectedColor = "#FF5733"
     @State private var showColorPicker = false
     
-    // 🆕 Focus pour iOS (permet de gérer le clavier)
-    @FocusState private var focusedField: Field?
+    @FocusState private var focusedField: Field?    // IOS focus
     
     enum Field {
         case name
     }
     
-    // Liste de couleurs prédéfinies
+    // Predefined color list
     private let availableColors = [
         "#FF5733", "#33FF57", "#3357FF", "#FF33F5",
         "#F5FF33", "#33FFF5", "#FF8C33", "#8C33FF",
@@ -39,7 +38,6 @@ struct CategoryFormView: View {
         self.category = category
         self.onSaved = onSaved
         
-        // Initialise les states avec les valeurs existantes ou par défaut
         _name = State(initialValue: category?.name ?? "")
         _selectedColor = State(initialValue: category != nil ? "\(category!.color)" : "")
     }
@@ -57,7 +55,7 @@ struct CategoryFormView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Formulaire
+                    // Form
                     formCard
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -130,14 +128,13 @@ struct CategoryFormView: View {
     
     private var formCard: some View {
         VStack(spacing: 20) {
-            // Couleur
+            // Coulor
             VStack(alignment: .leading, spacing: 8) {
                 Text("Couleur")
                     .font(.headline)
                     .foregroundColor(.primary)
                 
                 HStack(spacing: 16) {
-                    // Aperçu de la couleur
                     Circle()
                         .fill(Color(hex: selectedColor))
                         .frame(width: 40, height: 40)
@@ -173,7 +170,7 @@ struct CategoryFormView: View {
                     .buttonStyle(.plain)
                 }
                 
-                // Grid de couleurs
+                // Color grid
                 if showColorPicker {
                     LazyVGrid(columns: [
                         GridItem(.adaptive(minimum: 50))
@@ -201,7 +198,7 @@ struct CategoryFormView: View {
                 }
             }
             
-            // Nom
+            // Name
             formField(
                 title: "Nom",
                 placeholder: "Nom de la catégorie",
@@ -302,14 +299,14 @@ struct CategoryFormView: View {
         let savedCategory: Category?
         
         if let existingCategory = category {
-            // Édition
+            // Editing
             savedCategory = await viewModel.updateCategory(
                 categoryId: existingCategory.id,
                 name: name,
                 color: color
             )
         } else {
-            // Création
+            // Creating
             savedCategory = await viewModel.createCategory(name: name, color: color)
         }
         

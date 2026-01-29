@@ -27,16 +27,13 @@ struct BillsListView: View {
         return Array((currentYear - 9)...currentYear).reversed()
     }
     
-    // Bills filtrées selon les critères
     private var filteredBills: [Bill] {
         var bills = viewModel.bills
         
-        // Filtre par montant minimum
         if let minDecimal = Decimal(string: minAmount), !minAmount.isEmpty {
             bills = bills.filter { $0.amount >= minDecimal }
         }
         
-        // Filtre par montant maximum
         if let maxDecimal = Decimal(string: maxAmount), !maxAmount.isEmpty {
             bills = bills.filter { $0.amount <= maxDecimal }
         }
@@ -44,7 +41,6 @@ struct BillsListView: View {
         return bills
     }
     
-    // Compte le nombre de filtres actifs
     private var activeFiltersCount: Int {
         var count = 0
         if !minAmount.isEmpty { count += 1 }
@@ -63,19 +59,16 @@ struct BillsListView: View {
         ZStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    // Header Card
                     headerCard
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Section filtres (dépliable)
                     if showFilters {
                         filtersCard
                             .padding(.horizontal)
                             .padding(.top, 16)
                     }
                     
-                    // Contenu
                     contentView
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -167,7 +160,6 @@ struct BillsListView: View {
                 Spacer()
                 
                 HStack(spacing: 12) {
-                    // Bouton filtres
                     Button {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showFilters.toggle()
@@ -187,7 +179,6 @@ struct BillsListView: View {
                     }
                     .buttonStyle(.plain)
                     
-                    // Bouton créer
                     Button {
                         showCreateForm = true
                     } label: {
@@ -231,7 +222,6 @@ struct BillsListView: View {
                 }
             }
             
-            // Filtres par montant
             #if os(iOS)
             VStack(spacing: 16) {
                 amountFilterField(title: "Montant min", text: $minAmount)
@@ -371,13 +361,13 @@ struct BillsListView: View {
         }
     }
     
-    // Gère la création : ajoute uniquement si c'est la bonne catégorie, sinon recharge
+    // Add bill to local list if it's the same category, else reload
     private func handleBillCreated(_ newBill: Bill) {
         if newBill.categoryId == categoryId {
-            // Même catégorie → ajout local
+            // Same category -> local add
             viewModel.bills.append(newBill)
         } else {
-            // Catégorie différente → recharge la liste
+            // Different category -> reload bills
             Task {
                 await viewModel.loadBills(
                     categoryId: categoryId,
@@ -387,15 +377,15 @@ struct BillsListView: View {
         }
     }
     
-    // Gère la mise à jour : met à jour si même catégorie, sinon recharge
+    // Update bill in local list if it's the same category, else reload
     private func handleBillUpdated(_ updatedBill: Bill) {
         if updatedBill.categoryId == categoryId {
-            // Même catégorie → mise à jour locale
+            // Same category -> local update
             if let index = viewModel.bills.firstIndex(where: { $0.id == updatedBill.id }) {
                 viewModel.bills[index] = updatedBill
             }
         } else {
-            // Catégorie changée → recharge la liste (la bill a disparu de cette catégorie)
+            // Category changed -> reload bills
             Task {
                 await viewModel.loadBills(
                     categoryId: categoryId,

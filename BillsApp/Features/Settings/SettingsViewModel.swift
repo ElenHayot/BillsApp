@@ -14,7 +14,7 @@ class SettingsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    // Préférences utilisateur
+    // User settings
     @AppStorage("userLanguage") var userLanguage: String = "fr"
     @AppStorage("userTheme") var userTheme: String = "system"
     @AppStorage("notificationsEnabled") var notificationsEnabled: Bool = true
@@ -30,16 +30,16 @@ class SettingsViewModel: ObservableObject {
     
     func updateLanguage(_ language: String) {
         userLanguage = language
-        // Ici tu pourrais ajouter la logique pour changer la langue de l'appli
+        // TODO : Logic to add/modify app language
     }
     
     func updateTheme(_ theme: String) {
         userTheme = theme
-        // Ici tu pourrais ajouter la logique pour changer le thème
+        // TODO : Logic to change user design theme
     }
     
     func toggleNotifications() {
         notificationsEnabled.toggle()
-        // Ici tu pourrais ajouter la logique pour gérer les notifications
+        // TODO : Logic to manage notifications
     }
 }

@@ -27,7 +27,7 @@ struct UserFormView: View {
     
     // MARK: - subviews
     
-    // Layout pour macOS
+    // MacOS layout
     private var macOSLayout: some View {
         ZStack {
             ScrollView {
@@ -37,7 +37,7 @@ struct UserFormView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Formulaire
+                    // Form
                     formCard
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -54,7 +54,7 @@ struct UserFormView: View {
         .frame(width: 400)
     }
     
-    // Layout pour iOS
+    // IOS layout
     private var iOSLayout: some View {
         ZStack {
             ScrollView {
@@ -64,7 +64,7 @@ struct UserFormView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Formulaire
+                    // Form
                     formCard
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -125,21 +125,21 @@ struct UserFormView: View {
                 keyboardType: .emailAddress
             )
             
-            // Mot de passe
+            // Password
             formSecureField(
                 title: "Mot de passe",
                 placeholder: "Au moins 8 caractères",
                 text: $password
             )
             
-            // Confirmation du mot de passe
+            // Password confirmation
             formSecureField(
                 title: "Confirmer le mot de passe",
                 placeholder: "Répétez le mot de passe",
                 text: $confirmPassword
             )
             
-            // Indicateur de force du mot de passe
+            // Password hint indication
             passwordHint
         }
         .padding(.horizontal, 20)
@@ -153,7 +153,7 @@ struct UserFormView: View {
     
     private var actionsCard: some View {
         VStack(spacing: 16) {
-            // Message d'erreur
+            // Error message
             if !errorMessage.isEmpty {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -169,7 +169,7 @@ struct UserFormView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
-            // Bouton de création
+            // Creating button
             Button(action: createUser) {
                 HStack {
                     if isLoading {
@@ -202,7 +202,7 @@ struct UserFormView: View {
         .shadow(color: isFormValid ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 2)
     }
     
-    // Affichage des règles de mot de passe
+    // Password hint
     @ViewBuilder
     private var passwordHint: some View {
         if !password.isEmpty && password.count < 8 {
@@ -268,7 +268,7 @@ struct UserFormView: View {
         }
     }
     
-    // Validation du formulaire
+    // Validate form
     private var isFormValid: Bool {
         !email.isEmpty &&
         !password.isEmpty &&
@@ -277,7 +277,7 @@ struct UserFormView: View {
         email.contains("@")
     }
     
-    // Création de l'utilisateur
+    // Create user
     private func createUser() {
         guard isFormValid else {
             errorMessage = "Veuillez remplir tous les champs correctement"
@@ -294,13 +294,13 @@ struct UserFormView: View {
         
         Task {
             do {
-                // 1. Créer l'utilisateur
+                // Create user
                 try await viewModel.createUser(email: email, password: password)
                 
-                // 2. Connecter automatiquement l'utilisateur
+                // Connect user
                 await authViewModel.login(email: email, password: password)
                 
-                // 3. Mettre à jour hasUsers dans AuthViewModel
+                // Update hasUsers in AuthViewModel
                 authViewModel.hasUsers = true
                 
             } catch {
@@ -312,7 +312,7 @@ struct UserFormView: View {
         }
     }
     
-    // Fortification du mot de passe
+    // Password validator
     struct PasswordValidator {
         static func validate(_ password: String) -> PasswordStrength {
             let minLength = 8
@@ -327,8 +327,7 @@ struct UserFormView: View {
             return PasswordStrength(isValid: true, message: "Mot de passe valide")
         }
     }
-
-    // Validation du mot de passe
+    
     struct PasswordStrength {
         let isValid: Bool
         let message: String

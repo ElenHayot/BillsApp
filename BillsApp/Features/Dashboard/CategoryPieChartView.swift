@@ -36,10 +36,10 @@ struct CategoryPieChartView: View {
                     .fill(.clear)
                     .contentShape(Rectangle())
                     .onTapGesture { location in
-                        // Trouve la catégorie à cette position
+                        // Find the category at this position
                         let angle = proxy.angle(at: location)
                         
-                        // Sélectionne via le nom pour déclencher chartAngleSelection
+                        // Pick name to launch chartAngleSelection
                         if let foundCategory = findCategory(at: angle) {
                             selectedCategoryName = foundCategory.categoryName
                             onCategorySelected(foundCategory)

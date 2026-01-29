@@ -13,9 +13,8 @@ struct DashboardView: View {
     @Binding var navigationPath: NavigationPath
     
     @State private var displayMode: DisplayMode = .pie
-    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date()) //Année actuelle par défaut
+    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
 
-    // 📸 États pour le scan de facture
     @State private var showCamera = false
     #if os(iOS)
     @State private var capturedImage: UIImage?
@@ -27,14 +26,13 @@ struct DashboardView: View {
         case bar
     }
     
-    // Génère une liste d'années (par exemple les 10 dernières années)
+    // Generate year default list
     private var availableYears: [Int] {
         let currentYear = Calendar.current.component(.year, from: Date())
         return Array((currentYear - 9)...currentYear).reversed() // De currentYear à currentYear-9
     }
 
     var body: some View {
-//        NavigationStack(path: $navigationPath) {
             ZStack(alignment: .bottom) {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -81,7 +79,7 @@ struct DashboardView: View {
                                 quickActions
                                     .padding(.horizontal)
                                 
-                                // Padding pour éviter que le contenu ne soit caché par le bouton flottant
+                                // Padding to avoid the floating button to hide the content
                                 Color.clear
                                     .frame(height: 100)
                             }
@@ -103,7 +101,7 @@ struct DashboardView: View {
                 }
                 .background(Color(UIColor.systemGroupedBackground))
                 
-                // Bouton de scan flottant
+                // Floating scan button
                 VStack {
                     Spacer()
                     floatingScanButton
@@ -120,7 +118,6 @@ struct DashboardView: View {
                 }
             }
             .onChange(of: navigationPath) { oldPath, newPath in
-                // Si on revient au dashboard (path devient vide)
                 if oldPath.count > 0 && newPath.isEmpty {
                     Task {
                         await viewModel.loadDashboard(year: selectedYear)
@@ -128,14 +125,14 @@ struct DashboardView: View {
                 }
             }
             #if os(iOS)
-            // 📸 Sheet pour la caméra
+            // Sheet for camera
             .sheet(isPresented: $showCamera) {
                 ImagePicker(image: $capturedImage, sourceType: .camera)
             }
-            // 📸 Sheet pour le traitement de l'image
+            // Sheet for image treatment
             .sheet(item: $capturedImage) { image in
                 ScanProcessingView(image: image) {
-                    // Callback après traitement réussi
+                    // Callback after image treatment
                     Task {
                         await viewModel.loadDashboard(year: selectedYear)
                     }
@@ -247,7 +244,6 @@ struct DashboardView: View {
             
             // Chart Container
             VStack(spacing: 16) {
-                // Header du container avec titre et contrôles
                 HStack {
                     Text("Répartition par catégorie")
                         .font(.headline)
@@ -305,7 +301,7 @@ struct DashboardView: View {
             }
             
             HStack(spacing: 12) {
-                // Toutes les factures
+                // All bills navigate
                 Button {
                     navigationPath.append("all-bills")
                 } label: {
@@ -325,7 +321,7 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Catégories
+                // Categories navigate
                 Button {
                     navigationPath.append("categories")
                 } label: {
@@ -345,7 +341,7 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Fournisseurs
+                // Providers navigate
                 Button {
                     navigationPath.append("providers")
                 } label: {
@@ -375,7 +371,7 @@ struct DashboardView: View {
             #if os(iOS)
             showCamera = true
             #else
-            // Sur macOS, on pourrait proposer un file picker
+            // On macOS, should be a file picker option
             print("Scan non disponible sur macOS")
             #endif
         } label: {
@@ -390,10 +386,6 @@ struct DashboardView: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    
-//                    Text("Extraction automatique des données")
-//                        .font(.subheadline)
-//                        .foregroundColor(.white.opacity(0.9))
                 }
                 
                 Spacer()
@@ -419,7 +411,7 @@ struct DashboardView: View {
 }
 
 #if os(iOS)
-// 📸 Extension pour rendre UIImage identifiable (nécessaire pour .sheet(item:))
+// Extension to set UIImage as identifiable (requisite for .sheet(item:))
 extension UIImage: @retroactive Identifiable {
     public var id: String {
         return UUID().uuidString

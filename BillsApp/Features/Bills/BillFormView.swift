@@ -10,7 +10,7 @@ import Foundation
 
 struct BillFormView: View {
     
-    let bill: Bill? // nil = création, non-nil = édition
+    let bill: Bill? // nil = creating, non-nil = editing
     let defaultCategoryId: Int?
     let onSaved: (Bill) -> Void
     
@@ -25,12 +25,10 @@ struct BillFormView: View {
     @State private var providerName: String
     @State private var comment: String
     
-    // 🆕 Alert pour création de provider
-    @State private var showProviderAlert = false
+    @State private var showProviderAlert = false    // to create new provider
     @State private var providerToCreate: String = ""
     
-    // 🆕 Focus pour iOS (permet de gérer le clavier)
-    @FocusState private var focusedField: Field?
+    @FocusState private var focusedField: Field?    // IOS focus
     
     enum Field {
         case title, amount, providerName, comment
@@ -41,7 +39,6 @@ struct BillFormView: View {
         self.defaultCategoryId = defaultCategoryId
         self.onSaved = onSaved
         
-        // Initialise les states avec les valeurs existantes ou par défaut
         _title = State(initialValue: bill?.title ?? "")
         _amount = State(initialValue: bill != nil ? "\(bill!.amount)" : "")
         _date = State(initialValue: bill?.date ?? Date())
@@ -59,17 +56,14 @@ struct BillFormView: View {
         ZStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    // Header Card
                     headerCard
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Formulaire
                     formCard
                         .padding(.horizontal)
                         .padding(.top, 16)
                     
-                    // Actions
                     actionsCard
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -93,13 +87,14 @@ struct BillFormView: View {
         }
         .alert("Créer un nouveau fournisseur ?", isPresented: $showProviderAlert) {
             Button("Non") {
-                // Créer la facture sans le provider
+                // Create bill without creating provider
                 Task {
                     await saveBillForceWithoutProvider()
                 }
             }
             Button("Oui") {
                 Task {
+                    // Create provider before create bill
                     await createNewProvider()
                 }
             }
@@ -148,7 +143,6 @@ struct BillFormView: View {
     
     private var formCard: some View {
         VStack(spacing: 20) {
-            // Titre
             formField(
                 title: "Titre",
                 placeholder: "Titre de la facture",
@@ -156,7 +150,6 @@ struct BillFormView: View {
                 field: .title
             )
             
-            // Montant
             formField(
                 title: "Montant",
                 placeholder: "0.00",
@@ -165,7 +158,6 @@ struct BillFormView: View {
                 keyboardType: .decimalPad
             )
             
-            // Date
             VStack(alignment: .leading, spacing: 8) {
                 Text("Date")
                     .font(.headline)
@@ -183,7 +175,6 @@ struct BillFormView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
-            // Catégorie
             VStack(alignment: .leading, spacing: 8) {
                 Text("Catégorie")
                     .font(.headline)
@@ -218,7 +209,6 @@ struct BillFormView: View {
                 }
             }
             
-            // Fournisseur
             VStack(alignment: .leading, spacing: 8) {
                 Text("Fournisseur (optionnel)")
                     .font(.headline)
@@ -247,14 +237,12 @@ struct BillFormView: View {
                 }
             }
             
-            // Nom du fournisseur
             formTextArea(
                 title: "Nom du fournisseur (optionnel)",
                 text: $providerName,
                 field: .providerName
             )
             
-            // Commentaire
             formTextArea(
                 title: "Commentaire (optionnel)",
                 text: $comment,
@@ -380,12 +368,12 @@ struct BillFormView: View {
             return
         }
         
-        // Mettre à jour le selectedProviderId si on trouve un provider correspondant
+        // Edit providerId if existing provider found
         if selectedProviderId == nil {
             selectedProviderId = await detecteProviderId(name: providerName)
         }
         
-        // Vérifier si on doit créer un provider
+        // Check if create a provider is needed
         if shouldCreateProvider() {
             providerToCreate = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
             showProviderAlert = true
@@ -397,7 +385,7 @@ struct BillFormView: View {
         let savedBill: Bill?
         
         if let existingBill = bill {
-            // Édition
+            // Editing
             savedBill = await viewModel.updateBill(
                 billId: existingBill.id,
                 title: title,
@@ -409,7 +397,7 @@ struct BillFormView: View {
                 comment: comment.isEmpty ? "" : comment
             )
         } else {
-            // Création
+            // Creating
             savedBill = await viewModel.createBill(
                 title: title,
                 amount: amountDecimal,
@@ -427,7 +415,7 @@ struct BillFormView: View {
         }
     }
     
-    // Vérifie s'il existe un provider correspondant au nom détecté
+    // Check if a provider is found filtering on given providerName
     private func detecteProviderId(name: String) async -> Int? {
         if let existingProvider = await viewModel.fetchProvider(name: name) {
             return existingProvider.id
@@ -435,16 +423,14 @@ struct BillFormView: View {
         return nil
     }
     
-    // Logique de détection de provider à créer
+    // Manage if it's needed to create a new provider
     private func shouldCreateProvider() -> Bool {
         let trimmedName = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Vérifier si un nom est renseigné mais aucun provider sélectionné
         guard !trimmedName.isEmpty, selectedProviderId == nil else {
             return false
         }
         
-        // Vérifier si le provider n'existe pas déjà dans la liste
         let providerExists = viewModel.providers.contains { provider in
             provider.name.lowercased() == trimmedName.lowercased()
         }
@@ -452,7 +438,7 @@ struct BillFormView: View {
         return !providerExists
     }
     
-    // Forcer la sauvegarde sans créer le provider
+    // Force bill creation without provider
     private func saveBillForceWithoutProvider() async {
         guard let amountDecimal = Decimal(string: amount),
               let categoryId = selectedCategoryId
@@ -460,14 +446,12 @@ struct BillFormView: View {
             return
         }
         
-        // Garder le providerName mais vider selectedProviderId pour créer la facture avec le nom mais sans l'ID
+        // Keep providerName but providerId = nil
         let providerId: Int? = nil
-        // NE PAS vider providerName pour garder le nom pré-rempli
-        
         let savedBill: Bill?
         
         if let existingBill = bill {
-            // Édition
+            // Editing
             savedBill = await viewModel.updateBill(
                 billId: existingBill.id,
                 title: title,
@@ -479,7 +463,7 @@ struct BillFormView: View {
                 comment: comment.isEmpty ? "" : comment
             )
         } else {
-            // Création
+            // Creating
             savedBill = await viewModel.createBill(
                 title: title,
                 amount: amountDecimal,
@@ -497,21 +481,18 @@ struct BillFormView: View {
         }
     }
     
-    // Créer le nouveau provider
+    // Create new provider
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         
         if let newProvider = await providerViewModel.createProvider(name: providerToCreate) {
-            // Recharger la liste des providers
             await viewModel.loadProviders()
             
-            // Sélectionner automatiquement le nouveau provider
+            // Update bill once the provider is created and save
             if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {
                 selectedProviderId = createdProvider.id
                 providerName = createdProvider.name
             }
-            
-            // Relancer la sauvegarde de la facture
             await saveBill()
         }
     }

@@ -18,12 +18,10 @@ struct ScanProcessingView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = BillFormViewModel()
     
-    // États du scan
     @State private var isProcessing = true
     @State private var extractedText = ""
     @State private var ocrError: String?
     
-    // États du formulaire (comme BillFormView)
     @State private var title: String = ""
     @State private var amount: String = ""
     @State private var date: Date = Date()
@@ -32,7 +30,6 @@ struct ScanProcessingView: View {
     @State private var providerName: String = ""
     @State private var comment: String = ""
     
-    // 🆕 Alert pour création de provider
     @State private var showProviderAlert = false
     @State private var providerToCreate: String = ""
     
@@ -47,16 +44,13 @@ struct ScanProcessingView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     
-                    // 📸 IMAGE SCANNÉE
                     imageSection
                     
-                    // ⏳ STATUT DU TRAITEMENT
                     if isProcessing {
                         processingSection
                     } else if let error = ocrError {
                         errorSection(error)
                     } else {
-                        // ✅ FORMULAIRE PRÉ-REMPLI
                         formSection
                         
                         actionButtons
@@ -162,7 +156,7 @@ struct ScanProcessingView: View {
     private var formSection: some View {
         VStack(alignment: .leading, spacing: 20) {
             
-            // Texte extrait (collapsible pour debug)
+            // Extract text (collapsible for debug)
             if !extractedText.isEmpty {
                 DisclosureGroup("Texte extrait (debug)") {
                     Text(extractedText)
@@ -176,8 +170,7 @@ struct ScanProcessingView: View {
             }
             
             Divider()
-            
-            // Titre
+            // Title
             VStack(alignment: .leading, spacing: 8) {
                 Text("Titre")
                     .font(.headline)
@@ -188,7 +181,7 @@ struct ScanProcessingView: View {
                     .focused($focusedField, equals: .title)
             }
             
-            // Montant
+            // Amount
             VStack(alignment: .leading, spacing: 8) {
                 Text("Montant")
                     .font(.headline)
@@ -216,7 +209,7 @@ struct ScanProcessingView: View {
                 }
             }
             
-            // Catégorie
+            // Category
             VStack(alignment: .leading, spacing: 8) {
                 Text("Catégorie")
                     .font(.headline)
@@ -241,7 +234,7 @@ struct ScanProcessingView: View {
                 }
             }
             
-            // Fournisseur
+            // Provider
             VStack(alignment: .leading, spacing: 8) {
                 Text("Fournisseur (optionnel)")
                     .font(.headline)
@@ -260,7 +253,7 @@ struct ScanProcessingView: View {
                 }
             }
             
-            // Nom du fournisseur
+            // Provider name
             VStack(alignment: .leading, spacing: 8) {
                 Text("Nom du fournisseur")
                     .font(.headline)
@@ -274,7 +267,7 @@ struct ScanProcessingView: View {
                     .focused($focusedField, equals: .providerName)
             }
             
-            // Commentaire
+            // Comment
             VStack(alignment: .leading, spacing: 8) {
                 Text("Commentaire (optionnel)")
                     .font(.headline)
@@ -318,7 +311,7 @@ struct ScanProcessingView: View {
         selectedCategoryId != nil
     }
     
-    // 🆕 Champs calculés pour affichage formaté
+    // Format field
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
@@ -350,20 +343,19 @@ struct ScanProcessingView: View {
                 return
             }
             
-            // Extraire tout le texte
+            // Extract full text
             let recognizedStrings = observations.compactMap { observation in
                 observation.topCandidates(1).first?.string
             }
             
             extractedText = recognizedStrings.joined(separator: "\n")
             
-            // Parser le texte
+            // Parse text
             parseInvoiceData(from: extractedText)
             
             isProcessing = false
         }
-        
-        // Configuration de l'OCR
+        // OCR configuration
         request.recognitionLevel = .accurate
         request.recognitionLanguages = ["fr-FR", "en-US"]
         request.usesLanguageCorrection = true
@@ -381,12 +373,12 @@ struct ScanProcessingView: View {
     private func parseInvoiceData(from text: String) {
         let lines = text.components(separatedBy: .newlines)
         
-        // 1. MONTANT - Utilise la fonction extractAmount qui applique les stratégies intelligentes
+        // AMOUNT - Use extractAmount function to apply intelligent strategy
         if let detectedAmount = extractAmount(from: text) {
             amount = String(format: "%.2f", detectedAmount)
         }
         
-        // 2. DATE - Cherche des patterns comme "12/01/2026" ou "12 janvier 2026"
+        // DATE - Choose patterns like "12/01/2026" or "12 janvier 2026"
         for line in lines {
             if let detectedDate = extractDate(from: line) {
                 date = detectedDate
@@ -394,30 +386,30 @@ struct ScanProcessingView: View {
             }
         }
         
-        // 3. FOURNISSEUR - Prend les premières lignes NON-VIDES, en évitant "facture"
+        // PROVIDER - Take first non-empty lines, avoiding "facture"
         var providerLines: [String] = []
         let excludedWords = ["facture", "invoice", "bill", "devis", "quote"]
         
-        for line in lines.prefix(5) { // Regarde les 5 premières lignes max
+        for line in lines.prefix(5) { // Take max the 5th first lines
             let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
             
-            // Ignore les lignes vides ou trop courtes
+            // Ignore empty and shortest lines
             if cleanLine.count < 2 { continue }
             
-            // Ignore si c'est juste le mot "facture" ou similaire
+            // Ignore word "facture" and similar
             let lowercased = cleanLine.lowercased()
             if excludedWords.contains(where: { lowercased == $0 || lowercased.hasPrefix($0 + " ") }) {
                 continue
             }
             
-            // Ignore si ça ressemble à une date ou un montant
+            // Ignore if look like date or amount
             if cleanLine.contains("/") || cleanLine.contains("€") || cleanLine.contains("EUR") {
                 continue
             }
             
             providerLines.append(cleanLine)
             
-            // Prend maximum 2 lignes pour le nom du fournisseur
+            // Take max 2 lines for provider name
             if providerLines.count == 2 { break }
         }
         
@@ -425,7 +417,7 @@ struct ScanProcessingView: View {
             providerName = providerLines.joined(separator: " ")
         }
         
-        // 4. TITRE - Génère un titre par défaut
+        // TITLE - Generate default title
         if !providerName.isEmpty {
             title = "Facture \(providerName)"
         } else {
@@ -434,7 +426,7 @@ struct ScanProcessingView: View {
             title = "Facture du \(formatter.string(from: date))"
         }
         
-        // 5. COMMENTAIRE - Laisse vide par défaut (l'utilisateur peut ajouter si besoin)
+        // COMMENT - Empty by default (user can modifiate)
         comment = ""
     }
     
@@ -442,7 +434,7 @@ struct ScanProcessingView: View {
         let lines = text.components(separatedBy: .newlines)
         print("🔍 [EXTRACT] Début extraction montant avec \(lines.count) lignes")
         
-        // STRATÉGIE 1: Chercher "Solde à payer" ou "Reste à payer" (le PLUS fiable)
+        // 1st STRATEGY: Search "Solde à payer" or "Reste à payer"
         for i in 0..<lines.count {
             let lineUpper = lines[i].uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -452,12 +444,11 @@ struct ScanProcessingView: View {
                 
                 var amountsAroundSolde: [Double] = []
                 
-                // Cherche dans cette ligne
+                // Search in this line
                 if let amount = extractBestNumberFromLine(lines[i]) {
                     amountsAroundSolde.append(amount)
                 }
-                
-                // Puis dans les 3 lignes suivantes
+                // Then search in the 3 following
                 for j in 1...3 {
                     if i + j < lines.count {
                         print("🔎 [STRAT1] Vérification ligne \(i+j): \(lines[i+j])")
@@ -476,7 +467,7 @@ struct ScanProcessingView: View {
             }
         }
         
-        // STRATÉGIE 2: Chercher "Montant :" ou "Montant à payer"
+        // 2ns STRATEGY: Search "Montant :" or "Montant à payer"
         for i in 0..<lines.count {
             let lineUpper = lines[i].uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -485,12 +476,12 @@ struct ScanProcessingView: View {
                 
                 var amountsAroundMontant: [Double] = []
                 
-                // Cherche dans cette ligne
+                // Search in this line
                 if let amount = extractBestNumberFromLine(lines[i]) {
                     amountsAroundMontant.append(amount)
                 }
                 
-                // Puis dans les 2 lignes suivantes
+                // Then search in the 2 following
                 for j in 1...2 {
                     if i + j < lines.count {
                         print("🔎 [STRAT2] Vérification ligne \(i+j): \(lines[i+j])")
@@ -509,7 +500,7 @@ struct ScanProcessingView: View {
             }
         }
         
-        // STRATÉGIE 3: Chercher "Total TTC" ou "TOTAL TTC" (PLUS PRIORITAIRE)
+        // 3rd STRATEGY: Search "Total TTC" or "TOTAL TTC"
         for i in 0..<lines.count {
             let lineUpper = lines[i].uppercased()
             
@@ -539,7 +530,7 @@ struct ScanProcessingView: View {
             }
         }
         
-        // STRATÉGIE 4: Chercher "Total" SEUL mais EXCLURE les lignes avec "KG", "TN", poids, quantités
+        // 4th STRATEGY: Search "Total" ALONE but EXCLUDE lines with "KG", "TN", weight, quantities
         for i in 0..<lines.count {
             let lineTrimmed = lines[i].trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -548,11 +539,10 @@ struct ScanProcessingView: View {
                 
                 var amountsAroundTotal: [Double] = []
                 
-                // Cherche dans les 5 lignes suivantes en excluant les lignes avec poids/quantités
+                // Search in 5 following lines excluding lines with weight/quantities
                 for j in 1...5 {
                     if i + j < lines.count {
                         let checkLine = lines[i + j].uppercased()
-                        // Exclure les lignes qui contiennent des unités de poids/quantité
                         if !checkLine.contains("KG") && !checkLine.contains("TN") &&
                            !checkLine.contains("QUANTITE") && !checkLine.contains("POIDS") &&
                            !checkLine.contains("UNITE") && !checkLine.contains("UNIT.") {
@@ -575,12 +565,11 @@ struct ScanProcessingView: View {
             }
         }
         
-        // STRATÉGIE 5: Fallback - cherche le plus grand montant mais avec filtres plus stricts
+        // 5th STRATEGY: Fallback - search max amount
         print("🔄 [STRAT5] Fallback - recherche avec filtres stricts")
         var allAmounts: [Double] = []
         for line in lines {
             let lineUpper = line.uppercased()
-            // Ignorer les lignes avec des unités de poids, quantité, prix unitaire
             if !lineUpper.contains("KG") && !lineUpper.contains("TN") &&
                !lineUpper.contains("QUANTITE") && !lineUpper.contains("POIDS") &&
                !lineUpper.contains("UNITE") && !lineUpper.contains("UNIT.") &&
@@ -604,11 +593,10 @@ struct ScanProcessingView: View {
         return nil
     }
     
-    // Fonction helper pour extraire LE MEILLEUR nombre d'une ligne
     private func extractBestNumberFromLine(_ line: String) -> Double? {
         print("🔍 [HELPER] Analyse ligne: '\(line)'")
         
-        // Cherche tous les patterns possibles de nombres
+        // Number patterns
         let patterns = [
             "([0-9]\\s[0-9]{3},[0-9]{2})",    // "1 860,81" (format français avec espace)
             "([0-9]{1,3}\\s[0-9]{3},[0-9]{2})", // Variante
@@ -653,7 +641,7 @@ struct ScanProcessingView: View {
     
     private func extractDate(from text: String) -> Date? {
         let datePatterns: [(pattern: String, formatter: DateFormatter)] = [
-            // Pattern 1: "30 juin 2025" ou "12 janvier 2026"
+            // Pattern 1: "30 juin 2025" or "12 janvier 2026"
             ("([0-3]?[0-9])\\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\\s+([0-9]{4})", {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "d MMMM yyyy"
@@ -661,7 +649,7 @@ struct ScanProcessingView: View {
                 return formatter
             }()),
             
-            // Pattern 2: DD/MM/YYYY ou DD-MM-YYYY
+            // Pattern 2: DD/MM/YYYY or DD-MM-YYYY
             ("\\b([0-3]?[0-9])[/-]([0-1]?[0-9])[/-]([0-9]{4})\\b", {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "dd/MM/yyyy"
@@ -680,7 +668,7 @@ struct ScanProcessingView: View {
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let range = NSRange(text.startIndex..., in: text)
                 if let match = regex.firstMatch(in: text, range: range) {
-                    // Pour le format avec mois en lettres
+                    // Format with month in letters
                     if pattern.contains("janvier") {
                         if let dateRange = Range(match.range, in: text) {
                             let dateStr = String(text[dateRange])
@@ -689,7 +677,7 @@ struct ScanProcessingView: View {
                             }
                         }
                     } else {
-                        // Pour les formats numériques
+                        // Numeric format
                         if let dayRange = Range(match.range(at: 1), in: text),
                            let monthRange = Range(match.range(at: 2), in: text),
                            let yearRange = Range(match.range(at: 3), in: text) {
@@ -714,12 +702,10 @@ struct ScanProcessingView: View {
             return
         }
         
-        // Mettre à jour le selectedProviderId si on trouve un provider correspondant
         if selectedProviderId == nil {
             selectedProviderId = await detecteProviderId(name: providerName)
         }
         
-        // 🆕 Vérifier si on doit créer un provider
         if shouldCreateProvider() {
             providerToCreate = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
             showProviderAlert = true
@@ -742,7 +728,7 @@ struct ScanProcessingView: View {
         }
     }
     
-    // Vérifie s'il existe un provider correspondant au nom détecté
+    // Search an existing provider filtering on the given name
     private func detecteProviderId(name: String) async -> Int? {
         if let existingProvider = await viewModel.fetchProvider(name: name) {
             return existingProvider.id
@@ -750,16 +736,13 @@ struct ScanProcessingView: View {
         return nil
     }
     
-    // 🆕 Logique de détection de provider à créer
     private func shouldCreateProvider() -> Bool {
         let trimmedName = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Vérifier si un nom est renseigné mais aucun provider sélectionné
         guard !trimmedName.isEmpty, selectedProviderId == nil else {
             return false
         }
         
-        // Vérifier si le provider n'existe pas déjà dans la liste
         let providerExists = viewModel.providers.contains { provider in
             provider.name.lowercased() == trimmedName.lowercased()
         }
@@ -767,7 +750,6 @@ struct ScanProcessingView: View {
         return !providerExists
     }
     
-    // 🆕 Forcer la sauvegarde sans créer le provider
     private func saveBillForceWithoutProvider() async {
         guard let amountDecimal = Decimal(string: amount),
               let categoryId = selectedCategoryId
@@ -775,9 +757,7 @@ struct ScanProcessingView: View {
             return
         }
         
-        // Garder le providerName mais vider selectedProviderId pour créer la facture avec le nom mais sans l'ID
         let providerId: Int? = nil
-        // NE PAS vider providerName pour garder le nom pré-rempli
         
         let savedBill = await viewModel.createBill(
             title: title,
@@ -795,21 +775,17 @@ struct ScanProcessingView: View {
         }
     }
     
-    // 🆕 Créer le nouveau provider
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         
         if let newProvider = await providerViewModel.createProvider(name: providerToCreate) {
-            // Recharger la liste des providers
             await viewModel.loadProviders()
             
-            // Sélectionner automatiquement le nouveau provider
             if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {
                 selectedProviderId = createdProvider.id
                 providerName = createdProvider.name
             }
             
-            // Relancer la sauvegarde de la facture
             await saveBill()
         }
     }

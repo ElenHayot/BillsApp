@@ -185,9 +185,7 @@ struct UserEditView: View {
     // MARK: - Actions Card
     
     private var actionsCard: some View {
-        VStack(spacing: 16) {
-            // Message d'erreur
-            if let errorMessage = viewModel.errorMessage, !errorMessage.isEmpty {
+        VStack(spacing: 16) {            if let errorMessage = viewModel.errorMessage, !errorMessage.isEmpty {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.red)
@@ -202,7 +200,7 @@ struct UserEditView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
-            // Bouton de sauvegarde
+            // Saving button
             Button {
                 Task {
                     await saveChanges()
@@ -237,6 +235,13 @@ struct UserEditView: View {
             .disabled(viewModel.isLoading || !isFormValid)
         }
         .shadow(color: isFormValid ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 2)
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Helpers
@@ -262,11 +267,15 @@ struct UserEditView: View {
     private func saveChanges() async {
         guard isFormValid else { return }
         
-        await viewModel.updateUser(
-            email: email,
-            currentPassword: showPasswordChange ? currentPassword : nil,
-            newPassword: showPasswordChange ? newPassword : nil
-        )
+        do {
+            try await viewModel.updateUser(
+                email: email,
+                password: showPasswordChange ? newPassword : currentPassword
+            )
+            // TODO : update currentUser ?
+            
+        } catch {
+        }
     }
     
     private func formField(

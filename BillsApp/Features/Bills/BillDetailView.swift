@@ -12,7 +12,6 @@ struct BillDetailView: View {
 
     let bill: Bill
     
-    // Récupère le viewModel de la liste
     @EnvironmentObject private var listViewModel: BillsListViewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -23,17 +22,14 @@ struct BillDetailView: View {
         ZStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    // Header Card avec montant et titre
                     headerCard
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Informations détaillées
                     detailsCard
                         .padding(.horizontal)
                         .padding(.top, 16)
                     
-                    // Actions
                     actionsCard
                         .padding(.horizontal)
                         .padding(.top, 16)

@@ -15,7 +15,7 @@ final class DashboardViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    func loadDashboard(year: Int) async { // ✅ year optionnel
+    func loadDashboard(year: Int) async {
         isLoading = true
         errorMessage = nil
         

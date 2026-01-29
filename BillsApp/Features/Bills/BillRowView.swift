@@ -15,12 +15,10 @@ struct BillRowView: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Pastille couleur catégorie
             Circle()
                 .fill(Color(hex: categoryColor))
                 .frame(width: 12, height: 12)
             
-            // Contenu principal
             VStack(alignment: .leading, spacing: 4) {
                 Text(bill.title)
                     .font(.headline)
@@ -46,7 +44,6 @@ struct BillRowView: View {
             
             Spacer()
             
-            // Montant
             VStack(alignment: .trailing, spacing: 2) {
                 Text(bill.amountFormatted)
                     .font(.headline)
@@ -60,7 +57,6 @@ struct BillRowView: View {
                 }
             }
             
-            // Actions
             HStack(spacing: 8) {
                 Button {
                     onEdit()

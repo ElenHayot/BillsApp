@@ -35,7 +35,7 @@ final class ProvidersListViewModel: ObservableObject {
             try await APIClient.shared.deleteProvider(
                 providerId: providerId
             )
-            // Supprime de la liste locale
+            // Remove from local list
             providers.removeAll { $0.id == providerId }
         } catch {
             errorMessage = "Erreur lors de la suppression du fournisseur : \(error.localizedDescription)"

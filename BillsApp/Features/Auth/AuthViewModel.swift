@@ -2,7 +2,8 @@
 //  AuthViewModel.swift
 //  BillsApp
 //
-//  ViewModel pour gérer l'état d'authentification de l'app
+//  Created by Elen Hayot on 31/12/2025.
+//  ViewModel to manage authentication state
 //
 
 import Foundation
@@ -21,16 +22,13 @@ class AuthViewModel: ObservableObject {
     
     init() {
         Task {
-            // Au démarrage, vérifier si on a un refresh token valide
+            // Check if refresh token exists when launching app
             await checkAuthenticationState()
         }
     }
     
     @MainActor
     func checkIfUsersExist() async {
-        // Vérifie s'il existe des utilisateurs dans ta base de données
-        // Exemple avec UserDefaults (à adapter selon ton système de stockage)
-//        hasUsers = UserDefaults.standard.object(forKey: "hasUsers") != nil
         do {
             let users = try await APIClient.shared.fetchUsers()
             hasUsers = !users.isEmpty
@@ -42,9 +40,8 @@ class AuthViewModel: ObservableObject {
     }
     
     // MARK: - Check Authentication State
-    /// Vérifie si l'utilisateur est déjà connecté au démarrage de l'app
+    /// Check if user already connected when launching app
     private func checkAuthenticationState() async {
-        // Si on a un access token en mémoire ET un refresh token dans le Keychain
         if let token = AuthStorage.shared.accessToken,
            KeychainManager.shared.getRefreshToken() != nil {
             accessToken = token
@@ -52,34 +49,27 @@ class AuthViewModel: ObservableObject {
             hasUsers = true
             isCheckingUsers = false
         } else if KeychainManager.shared.getRefreshToken() != nil {
-            // Si on a seulement un refresh token, on peut tenter un refresh
             await attemptTokenRefresh()
             hasUsers = true
             isCheckingUsers = false
         } else {
             print("❓ Pas de token, vérification des utilisateurs...")
-            // Si pas de token ni de refresh, on vérifie qu'il existe au moins un compte utilisateur
             await checkIfUsersExist()
         }
     }
     
     // MARK: - Attempt Token Refresh
-    /// Tente de récupérer un nouveau access token avec le refresh token
+    /// Try to get new access token with current refresh token
     private func attemptTokenRefresh() async {
         do {
-            // Simuler une requête qui va déclencher le refresh automatique
-            // En pratique, le refresh se fera automatiquement lors de la première requête API
-            // Ici on pourrait faire un appel à un endpoint de "check" ou attendre la première requête
-            try await APIClient.shared.fetchCategories()
-            print("✅ Refresh token disponible, l'utilisateur sera reconnecté automatiquement")
+            try await APIClient.shared.refreshAccessToken()
         } catch {
-            // Si ça échoue, on déconnecte
             logout()
         }
     }
 
     // MARK: - Login
-    /// Connecte l'utilisateur avec email et password
+    /// Login user with email and password
     func login(email: String, password: String) async {
         isLoading = true
         errorMessage = nil
@@ -90,7 +80,6 @@ class AuthViewModel: ObservableObject {
                 password: password
             )
             
-            // Les tokens sont déjà sauvegardés dans APIClient.login()
             accessToken = response.accessToken
             currentUser = response.currentUser
             tokenType = response.tokenType
@@ -108,18 +97,16 @@ class AuthViewModel: ObservableObject {
     }
 
     // MARK: - Logout
-    /// Déconnecte l'utilisateur et nettoie tous les tokens
+    /// Logout user and clear tokens
     func logout() {
         Task {
             do {
-                // Appeler le endpoint de logout (qui supprime le refresh token côté serveur)
                 try await APIClient.shared.logout()
                 print("✅ Logout réussi")
             } catch {
                 print("⚠️ Erreur lors du logout serveur: \(error)")
             }
             
-            // Nettoyer l'état local quoi qu'il arrive
             await MainActor.run {
                 AuthStorage.shared.accessToken = nil
                 KeychainManager.shared.deleteRefreshToken()

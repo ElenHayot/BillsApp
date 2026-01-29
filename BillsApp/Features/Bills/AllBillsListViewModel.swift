@@ -17,8 +17,7 @@ final class AllBillsListViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isDeleting: Bool = false
-    
-    // Charge les bills avec filtres optionnels
+
     func loadBills(
         year: Int,
         categoryId: Int? = nil,
@@ -30,10 +29,10 @@ final class AllBillsListViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            // 1. Charge les catégories d'abord
+            // Load categories
             categories = try await APIClient.shared.fetchCategories()
             
-            // 2. Charge les bills avec filtres
+            // Load bills with filters
             let plainBills = try await APIClient.shared.fetchAllBills(
                 year: year,
                 categoryId: categoryId,
@@ -42,7 +41,7 @@ final class AllBillsListViewModel: ObservableObject {
                 maxAmount: maxAmount
             )
             
-            // 3. Associe chaque bill à sa couleur de catégorie
+            // Associate bill <-> category
             bills = plainBills.map { bill in
                 let categoryColor = categories.first(where: { $0.id == bill.bill.categoryId })?.color
                 return BillWithCategory(bill: bill.bill, categoryColor: categoryColor)
@@ -57,7 +56,6 @@ final class AllBillsListViewModel: ObservableObject {
     func deleteBill(
         billId: Int
     ) async {
-
         isDeleting = true
         defer { isDeleting = false }
 
@@ -72,12 +70,13 @@ final class AllBillsListViewModel: ObservableObject {
         }
     }
     
+    // Return the category color
     func categoryColor(for categoryId: Int) -> String {
         categories.first(where: { $0.id == categoryId })?.color ?? "#999999"
     }
 }
 
-// Extension de Bill pour inclure la couleur de catégorie
+// Bill extension to include category color
 struct BillWithCategory: Identifiable {
     let bill: Bill
     let categoryColor: String?

@@ -33,7 +33,7 @@ final class CategoriesViewModel: ObservableObject {
             try await APIClient.shared.deleteCategory(
                 categoryId: category.id
             )
-            // Supprime de la liste locale
+            // Remove from local list
             categories.removeAll { $0.id == category.id }
         } catch {
             errorMessage = "Failed to delete category: \(error.localizedDescription)"

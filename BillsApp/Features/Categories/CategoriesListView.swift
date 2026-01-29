@@ -24,7 +24,7 @@ struct CategoriesListView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Contenu
+                    // Content
                     contentView
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -37,7 +37,6 @@ struct CategoriesListView: View {
         }
         .sheet(isPresented: $showCreateForm) {
             CategoryFormView() { newCategory in
-                // Ajoute la nouvelle catégorie à la liste
                 viewModel.categories.append(newCategory)
             }
         }
@@ -45,7 +44,6 @@ struct CategoriesListView: View {
             CategoryFormView(
                 category: category
             ) { updatedCategory in
-                // Met à jour la catégorie dans la liste
                 if let index = viewModel.categories.firstIndex(where: { $0.id == updatedCategory.id }) {
                     viewModel.categories[index] = updatedCategory
                 }
@@ -188,7 +186,6 @@ struct CategoriesListView: View {
         await viewModel.deleteCategory(
             category: category
         )
-        // Supprime de la liste locale
         categoryToDelete = nil
     }
 }

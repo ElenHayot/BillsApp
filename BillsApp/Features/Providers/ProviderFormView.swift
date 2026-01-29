@@ -10,16 +10,14 @@ import SwiftUI
 
 struct ProviderFormView: View {
     
-    let provider: Provider? // nil = création, non-nil = édition
+    let provider: Provider? // nil = creating, non-nil = editing
     let onSaved: (Provider) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ProviderFormViewModel()
     
     @State private var name: String
-    
-    // 🆕 Focus pour iOS (permet de gérer le clavier)
-    @FocusState private var focusedField: Field?
+    @FocusState private var focusedField: Field?    // IOS focus
     
     enum Field {
         case name
@@ -29,7 +27,6 @@ struct ProviderFormView: View {
         self.provider = provider
         self.onSaved = onSaved
         
-        // Initialise les states avec les valeurs existantes ou par défaut
         _name = State(initialValue: provider?.name ?? "")
     }
     
@@ -46,7 +43,7 @@ struct ProviderFormView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Formulaire
+                    // Form
                     formCard
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -58,7 +55,9 @@ struct ProviderFormView: View {
                         .padding(.bottom, 100)
                 }
             }
+            #if os(iOS)
             .background(Color(UIColor.systemGroupedBackground))
+            #endif
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -101,7 +100,9 @@ struct ProviderFormView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+            #if os(iOS)
             .background(Color(UIColor.systemBackground))
+            #endif
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -111,7 +112,7 @@ struct ProviderFormView: View {
     
     private var formCard: some View {
         VStack(spacing: 20) {
-            // Nom
+            // Name
             formField(
                 title: "Nom",
                 placeholder: "Nom du fournisseur",
@@ -121,7 +122,9 @@ struct ProviderFormView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+        #if os(iOS)
         .background(Color(UIColor.systemBackground))
+        #endif
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -137,7 +140,9 @@ struct ProviderFormView: View {
             .font(.headline)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
+            #if os(iOS)
             .background(Color(UIColor.systemBackground))
+            #endif
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
             .buttonStyle(.plain)
@@ -194,10 +199,10 @@ struct ProviderFormView: View {
                 #if os(iOS)
                 .focused($focusedField, equals: field)
                 .autocapitalization(.words)
+                .background(Color(UIColor.systemGray6))
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -210,13 +215,13 @@ struct ProviderFormView: View {
         let savedProvider: Provider?
         
         if let existingProvider = provider {
-            // Édition
+            // Editing
             savedProvider = await viewModel.updateProvider(
                 providerId: existingProvider.id,
                 name: name
             )
         } else {
-            // Création
+            // Creating
             savedProvider = await viewModel.createProvider(name: name)
         }
         

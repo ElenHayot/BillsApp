@@ -4,7 +4,7 @@
 //
 //  Created by Elen Hayot on 29/12/2025.
 //
-//  Gestion sécurisée du refresh token dans le Keychain iOS
+//  Secured refresh token management in IOS keychain
 //
 
 import Foundation
@@ -19,12 +19,12 @@ final class KeychainManager {
     private init() {}
     
     // MARK: - Save Refresh Token
-    /// Sauvegarde le refresh token dans le Keychain de manière sécurisée
+    /// Save refresh token into keychain
     func saveRefreshToken(_ token: String) {
-        // Convertir le token en Data
+        // Convert token into data
         guard let data = token.data(using: .utf8) else { return }
         
-        // Créer le query dictionary pour le Keychain
+        // Create the keychain query dictionary
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -33,10 +33,10 @@ final class KeychainManager {
             kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         
-        // Supprimer l'ancien token s'il existe
+        // Delete old token if exists
         SecItemDelete(query as CFDictionary)
         
-        // Ajouter le nouveau token
+        // Add new token
         let status = SecItemAdd(query as CFDictionary, nil)
         
         if status != errSecSuccess {
@@ -45,7 +45,7 @@ final class KeychainManager {
     }
     
     // MARK: - Get Refresh Token
-    /// Récupère le refresh token depuis le Keychain
+    /// Get refresh token from keychain
     func getRefreshToken() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -68,7 +68,7 @@ final class KeychainManager {
     }
     
     // MARK: - Delete Refresh Token
-    /// Supprime le refresh token du Keychain (lors du logout)
+    /// Remove refresh token from keychain (on logout)
     func deleteRefreshToken() {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

@@ -2,7 +2,7 @@
 //  APIClient.swift
 //  BillsApp
 //
-//  Client API avec gestion automatique du refresh token
+//  API client with automatic refresh token management
 //
 
 import Foundation
@@ -13,7 +13,7 @@ final class APIClient {
     //private let baseURL = URL(string: "http://localhost:8000/api/v1")!
     private let baseURL = URL(string: "http://172.20.10.3:8000/api/v1")!
     
-    // Lock pour éviter les refreshs multiples simultanés
+    // Lock to avoid simultanous multiple refreshes
     private var isRefreshing = false
     private var refreshTask: Task<String, Error>?
     private let decoder = JSONDecoder()
@@ -22,15 +22,15 @@ final class APIClient {
         decoder.dateDecodingStrategy = .iso8601
     }
     
-    // MARK: - Generic Request avec Auto-Refresh
-    /// Méthode générique qui gère automatiquement le refresh si token expiré
+    // MARK: - Generic Request with Auto-Refresh
+    /// Geneeric method to manage refresh if access token is expired
     private func performRequest<T: Decodable>(
         _ request: URLRequest,
         responseType: T.Type
     ) async throws -> T {
         var currentRequest = request
         
-        // Ajouter le token d'accès
+        // Add access token
         if let token = AuthStorage.shared.accessToken {
             currentRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -42,14 +42,14 @@ final class APIClient {
         }
         
         
-        // Si 401 : le token est expiré, on tente un refresh
+        // If 401 : access token expired, try to refresh
         if http.statusCode == 401 {
             print("🔄 Token expiré, tentative de refresh...")
             
-            // Refresh le token
+            // Refresh the access token
             let newToken = try await refreshAccessToken()
             
-            // Retry la requête avec le nouveau token
+            // Retry request with new access token
             currentRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
             let (retryData, retryResponse) = try await URLSession.shared.data(for: currentRequest)
             
@@ -67,8 +67,8 @@ final class APIClient {
         return try decoder.decode(T.self, from: data)
     }
     
-    // MARK: - Perform Request(sans réponse décodable)
-    /// Pour les requêtes DELETE ou autres qui ne retournent pas de JSON
+    // MARK: - Perform Request(without decodable response)
+    /// For DELETE requests not returning JSON
     private func performRequestWithoutResponse(_request: URLRequest) async throws {
         var currentRequest = _request
         
@@ -102,14 +102,13 @@ final class APIClient {
     }
     
     // MARK: - Refresh Access Token
-    /// Refresh l'access token en utilisant le refresh token stocké
-    private func refreshAccessToken() async throws -> String {
-        // Si un refresh est déjà en cours, attendre son résultat
+    /// Refresh access token
+    func refreshAccessToken() async throws -> String {
         if let existingTask = refreshTask {
             return try await existingTask.value
         }
         
-        // Créer une nouvelle tâche de refresh
+        // New refresh task
         let task = Task<String, Error> { () -> String in
             guard let refreshToken = KeychainManager.shared.getRefreshToken() else {
                 throw URLError(.userAuthenticationRequired)
@@ -132,7 +131,7 @@ final class APIClient {
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {
-                // Si le refresh échoue, déconnecter l'utilisateur
+                // If refresh fails, logout user
                 await MainActor.run {
                     AuthStorage.shared.accessToken = nil
                     KeychainManager.shared.deleteRefreshToken()
@@ -142,7 +141,7 @@ final class APIClient {
             
             let refreshResponse = try JSONDecoder().decode(RefreshResponse.self, from: data)
             
-            // Sauvegarder les nouveaux tokens
+            // Save new token
             await MainActor.run {
                 AuthStorage.shared.accessToken = refreshResponse.accessToken
                 KeychainManager.shared.saveRefreshToken(refreshResponse.refreshToken)
@@ -202,7 +201,7 @@ final class APIClient {
         
         let loginResponse = try decoder.decode(LoginResponse.self, from: data)
         
-        // Sauvegarder les tokens
+        // Save tokens
         AuthStorage.shared.accessToken = loginResponse.accessToken
         AuthStorage.shared.currentUser = loginResponse.currentUser
         KeychainManager.shared.saveRefreshToken(loginResponse.refreshToken)
@@ -226,17 +225,17 @@ final class APIClient {
         let body = ["refresh_token": refreshToken]
         request.httpBody = try JSONEncoder().encode(body)
         
-        // On tente de logout sur le serveur, mais on nettoie quoi qu'il arrive
+        // Try to logout and clear
         _ = try? await URLSession.shared.data(for: request)
         
-        // Nettoyer les tokens localement
+        // Clear all local tokens
         AuthStorage.shared.accessToken = nil
         KeychainManager.shared.deleteRefreshToken()
     }
     
     // MARK: - Users
     
-    /// Récupère tous les utilisateurs
+    /// Fetch all users
     func fetchUsers() async throws -> [User] {
         var url = baseURL
         url.append(path: "users/")
@@ -248,7 +247,7 @@ final class APIClient {
         return try await performRequest(request, responseType: [User].self)
     }
     
-    /// Crée un nouveau utilisateur
+    /// Create a new user account
     func createUser(email: String, password: String) async throws -> User {
         var url = baseURL
         url.append(path: "users/")
@@ -267,9 +266,31 @@ final class APIClient {
         return try await performRequest(request, responseType: User.self)
     }
     
+    /// Update an existing user
+    func updateUser(email: String, password: String) async throws -> User {
+        var url = baseURL
+        url.append(path: "users/\(email)")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: String] = [
+            "email": email,
+            "password": password
+        ]
+        
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        let user = try await performRequest(request, responseType: User.self)
+        AuthStorage.shared.currentUser = user
+        
+        return user
+    }
+    
     // MARK: - Categories
     
-    /// Récupère toutes les catégories
+    /// Fetch all categories
     func fetchCategories() async throws -> [Category] {
         var url = baseURL
         url.append(path: "categories/")
@@ -281,7 +302,7 @@ final class APIClient {
         return try await performRequest(request, responseType: [Category].self)
     }
     
-    /// Crée une nouvelle catégorie
+    /// Create a new category
     func createCategory(name: String, color: String) async throws -> Category {
         var url = baseURL
         url.append(path: "categories/")
@@ -300,7 +321,7 @@ final class APIClient {
         return try await performRequest(request, responseType: Category.self)
     }
     
-    /// Met à jour une catégorie
+    /// Update an existing category
     func updateCategory(categoryId: Int, name: String, color: String) async throws -> Category {
         var url = baseURL
         url.append(path: "categories/\(categoryId)/")
@@ -319,7 +340,7 @@ final class APIClient {
         return try await performRequest(request, responseType: Category.self)
     }
     
-    /// Supprime une catégorie
+    /// Delete a category
     func deleteCategory(categoryId: Int) async throws {
         var url = baseURL
         url.append(path: "categories/\(categoryId)/")
@@ -332,7 +353,7 @@ final class APIClient {
     
     // MARK: - Bills
     
-    /// Récupère toutes les factures avec filtres
+    /// Fetch all bills with applied filters
     func fetchAllBills(
         year: Int,
         categoryId: Int? = nil,
@@ -371,7 +392,7 @@ final class APIClient {
             queryItems.append(URLQueryItem(name: "max_amount", value: "\(maxAmount)"))
         }
         
-        // Ajouter les query items
+        // Add query items
         url.append(queryItems: queryItems)
         
         var request = URLRequest(url: url)
@@ -380,12 +401,11 @@ final class APIClient {
         
         let bills = try await performRequest(request, responseType: [Bill].self)
         
-        
+        // Return bills mapped with category
         return bills.map { BillWithCategory(bill: $0, categoryColor: nil) }
-//        return bills
     }
     
-    /// Récupère toutes les factures associées à une catégorie
+    /// Fetch all bills grouped by category
     func fetchBillsGroupedByCategory(
         categoryId: Int,
         year: Int
@@ -404,7 +424,7 @@ final class APIClient {
         return try await performRequest(request, responseType: [Bill].self)
     }
     
-    /// Crée une nouvelle facture
+    /// Create a bill
     func createBill(
         title: String,
         amount: Decimal,
@@ -437,7 +457,7 @@ final class APIClient {
         return try await performRequest(request, responseType: Bill.self)
     }
     
-    /// Met à jour une facture
+    /// Update a bill
     func updateBill (
         billId: Int,
         title: String,
@@ -473,7 +493,7 @@ final class APIClient {
         return try await performRequest(request, responseType: Bill.self)
     }
     
-    /// Supprime une facture
+    /// Delete a bill
     func deleteBill(billId: Int) async throws {
         var url =  baseURL
         url.append(path: "bills/\(billId)/")
@@ -486,7 +506,7 @@ final class APIClient {
     
     // MARK: - Providers
     
-    /// Récupère toutes les  fournisseurs
+    /// Fetch all providers
     func fetchProviders(
         name: String? = nil,
         page: Int = 1,
@@ -504,7 +524,7 @@ final class APIClient {
             queryItems.append(URLQueryItem(name: "name", value: "\(name)"))
         }
         
-        // Ajouter les query items
+        // Add query items
         url.append(queryItems: queryItems)
                             
         var request = URLRequest(url: url)
@@ -514,7 +534,7 @@ final class APIClient {
         return try await performRequest(request, responseType: [Provider].self)
     }
     
-    /// Crée un nouveau fournisseur
+    /// Create a provider
     func createProvider(name: String) async throws -> Provider {
         var url = baseURL
         url.append(path: "providers/")
@@ -532,7 +552,7 @@ final class APIClient {
         return try await performRequest(request, responseType: Provider.self)
     }
     
-    /// Met à jour un fournisseur
+    /// Update an existing provider
     func updateProvider(providerId: Int, name: String) async throws -> Provider {
         var url = baseURL
         url.append(path: "providers/\(providerId)/")
@@ -550,7 +570,7 @@ final class APIClient {
         return try await performRequest(request, responseType: Provider.self)
     }
     
-    /// Supprime un fournisseur
+    /// Delete a provider
     func deleteProvider(providerId: Int) async throws {
         var url = baseURL
         url.append(path: "providers/\(providerId)/")
@@ -564,15 +584,6 @@ final class APIClient {
 
 
 // MARK: - Response Models
-//struct LoginResponse: Decodable {
-//    let accessToken: String
-//    let refreshToken: String
-//    
-//    enum CodingKeys: String, CodingKey {
-//        case accessToken = "access_token"
-//        case refreshToken = "refresh_token"
-//    }
-//}
 
 struct RefreshResponse: Decodable {
     let accessToken: String

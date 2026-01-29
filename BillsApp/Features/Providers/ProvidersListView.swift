@@ -27,7 +27,7 @@ struct ProvidersListView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Contenu
+                    // Content
                     contentView
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -187,12 +187,12 @@ struct ProvidersListView: View {
     
     // MARK: - helpers
     
-    // Gère la création - met à jour la liste
+    // Manage provider creation - update local list
     private func handleProviderCreated(_ newProvider: Provider) {
         viewModel.providers.append(newProvider)
     }
     
-    // Gère la mise à jour
+    // Manage updating
     private func handleProviderUpdated(_ updatedProvider: Provider) {
         if let index = viewModel.providers.firstIndex(where: { $0.id == updatedProvider.id }) {
             viewModel.providers[index] = updatedProvider

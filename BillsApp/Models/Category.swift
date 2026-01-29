@@ -7,7 +7,7 @@
 import Foundation
 
 struct Category: Identifiable, Decodable, Hashable {
-    let id: Int                // category_id backend
+    let id: Int
     let name: String
     let color: String
     let createdAt: Date

@@ -32,7 +32,7 @@ struct CategoryBarChartView: View {
                     .fill(.clear)
                     .contentShape(Rectangle())
                     .onTapGesture { location in
-                        // Trouve la catégorie à cette position X
+                        // Find the category at this x position
                         if let categoryName: String = proxy.value(atX: location.x) {                            
                             if let category = categories.first(where: { $0.categoryName == categoryName }) {
                                 onCategorySelected(category)

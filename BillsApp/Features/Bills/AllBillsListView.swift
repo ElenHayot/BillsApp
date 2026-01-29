@@ -26,21 +26,21 @@ struct AllBillsListView: View {
         return Array((currentYear - 9)...currentYear).reversed()
     }
     
-    // Bills filtrées selon les critères
+    // Filtered bills
     private var filteredBills: [BillWithCategory] {
         var bills = viewModel.bills
         
-        // Filtre par catégorie
+        // Filtered by category
         if let categoryId = selectedCategoryId {
             bills = bills.filter { $0.bill.categoryId == categoryId }
         }
         
-        // Filtre par montant minimum
+        // Filtered by min amount
         if let minDecimal = Decimal(string: minAmount), !minAmount.isEmpty {
             bills = bills.filter { $0.bill.amount >= minDecimal }
         }
         
-        // Filtre par montant maximum
+        // Filtered by max amount
         if let maxDecimal = Decimal(string: maxAmount), !maxAmount.isEmpty {
             bills = bills.filter { $0.bill.amount <= maxDecimal }
         }
@@ -48,7 +48,7 @@ struct AllBillsListView: View {
         return bills
     }
     
-    // Compte le nombre de filtres actifs
+    // Number of active filters
     private var activeFiltersCount: Int {
         var count = 0
         if selectedCategoryId != nil { count += 1 }
@@ -65,19 +65,16 @@ struct AllBillsListView: View {
         ZStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    // Header Card
                     headerCard
                         .padding(.horizontal)
                         .padding(.top, 8)
                     
-                    // Section filtres (dépliable)
                     if showFilters {
                         filtersCard
                             .padding(.horizontal)
                             .padding(.top, 16)
                     }
                     
-                    // Contenu
                     contentView
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -160,7 +157,7 @@ struct AllBillsListView: View {
                 Spacer()
                 
                 HStack(spacing: 12) {
-                    // Bouton filtres
+                    // Filter button
                     Button {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showFilters.toggle()
@@ -180,7 +177,7 @@ struct AllBillsListView: View {
                     }
                     .buttonStyle(.plain)
                     
-                    // Bouton créer
+                    // Create button
                     Button {
                         showCreateForm = true
                     } label: {
@@ -226,7 +223,7 @@ struct AllBillsListView: View {
             }
             
             VStack(spacing: 16) {
-                // Filtre par catégorie
+                // Filtered by category
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Catégorie")
                         .font(.subheadline)
@@ -253,7 +250,7 @@ struct AllBillsListView: View {
                     }
                 }
                 
-                // Filtres par montant
+                // Filtered by amount
                 #if os(iOS)
                 VStack(spacing: 16) {
                     amountFilterField(title: "Montant min", text: $minAmount)

@@ -15,7 +15,7 @@ struct CategoryRowView: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Pastille de couleur
+            // Color circle
             Circle()
                 .fill(Color(hex: category.color))
                 .frame(width: 16, height: 16)
@@ -24,7 +24,7 @@ struct CategoryRowView: View {
                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                 )
             
-            // Contenu principal
+            // Main content
             VStack(alignment: .leading, spacing: 4) {
                 Text(category.name)
                     .font(.headline)

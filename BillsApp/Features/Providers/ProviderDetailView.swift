@@ -12,7 +12,6 @@ struct ProviderDetailView: View {
 
     let provider: Provider
     
-    // Récupère le viewModel de la liste
     @EnvironmentObject private var listViewModel: ProvidersListViewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -35,7 +34,9 @@ struct ProviderDetailView: View {
                         .padding(.bottom, 100)
                 }
             }
+            #if os(iOS)
             .background(Color(UIColor.systemGroupedBackground))
+            #endif
         }
         .alert("Supprimer ce fournisseur ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
@@ -45,7 +46,6 @@ struct ProviderDetailView: View {
                     )
                     if success {
                         print("✅ Suppression réussie, suppression locale pour provider \(provider.id)")
-                        // ✅ Supprime directement dans le viewModel
                         listViewModel.providers.removeAll { $0.id == provider.id }
                         dismiss()
                     } else {
@@ -89,7 +89,9 @@ struct ProviderDetailView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
+            #if os(iOS)
             .background(Color(UIColor.systemBackground))
+            #endif
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }

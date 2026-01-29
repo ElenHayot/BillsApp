@@ -16,13 +16,13 @@ struct ProviderRowView: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Icône fournisseur
+            // Provider image
             Image(systemName: "building.2.fill")
                 .font(.title2)
                 .foregroundColor(.blue)
                 .frame(width: 24, height: 24)
             
-            // Contenu principal
+            // Main content
             VStack(alignment: .leading, spacing: 4) {
                 Text(provider.name)
                     .font(.headline)

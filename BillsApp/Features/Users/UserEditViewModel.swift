@@ -15,26 +15,26 @@ class UserEditViewModel: ObservableObject {
     @Published var successMessage: String?
     @Published var shouldDismiss = false
     
-    func updateUser(email: String, currentPassword: String?, newPassword: String?) async {
+    func updateUser(email: String, password: String) async throws -> User {
         isLoading = true
         errorMessage = nil
         successMessage = nil
         
         do {
-            // Simuler une mise à jour (à remplacer par ta vraie logique)
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
-            
-            // Ici tu mettrais ta vraie logique de mise à jour
-            // Par exemple :
-            // try await authService.updateUser(email: email, currentPassword: currentPassword, newPassword: newPassword)
+            let response = try await APIClient.shared.updateUser(email: email, password: password)
             
             successMessage = "Profil mis à jour avec succès"
             shouldDismiss = true
+            isLoading = false
+            
+            return response
             
         } catch {
             errorMessage = "Erreur lors de la mise à jour : \(error.localizedDescription)"
+            isLoading = false
+            
+            throw error
         }
         
-        isLoading = false
     }
 }

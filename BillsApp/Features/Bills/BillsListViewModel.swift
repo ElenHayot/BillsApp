@@ -40,7 +40,7 @@ final class BillsListViewModel: ObservableObject {
             try await APIClient.shared.deleteBill(
                 billId: billId
             )
-            // Supprime de la liste locale
+            // Remove from local list
             bills.removeAll { $0.id == billId }
         } catch {
             errorMessage = "Erreur lors de la suppression de la facture: \(error.localizedDescription)"

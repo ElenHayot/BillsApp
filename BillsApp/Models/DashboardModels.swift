@@ -34,7 +34,7 @@ struct DashboardGlobalStats: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         nbBills = try container.decode(Int.self, forKey: .nbBills)
         
-        // Gère à la fois String et Number
+        // Manage both String and Number
         if let stringValue = try? container.decode(String.self, forKey: .totalAmount) {
             totalAmount = Decimal(string: stringValue) ?? 0
         } else if let doubleValue = try? container.decode(Double.self, forKey: .totalAmount) {
@@ -68,7 +68,7 @@ struct DashboardCategoryStats: Decodable, Identifiable, Hashable {
         categoryColor = try container.decode(String.self, forKey: .categoryColor)
         nbBills = try container.decode(Int.self, forKey: .nbBills)
         
-        // Gère à la fois String et Number
+        // Manage both String and Number
         if let stringValue = try? container.decode(String.self, forKey: .totalAmount) {
             totalAmount = Decimal(string: stringValue) ?? 0
         } else if let doubleValue = try? container.decode(Double.self, forKey: .totalAmount) {
