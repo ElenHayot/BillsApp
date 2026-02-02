@@ -268,11 +268,11 @@ struct UserEditView: View {
         guard isFormValid else { return }
         
         do {
+            // currentUser already updated in APIService
             try await viewModel.updateUser(
                 email: email,
                 password: showPasswordChange ? newPassword : currentPassword
             )
-            // TODO : update currentUser ?
             
         } catch {
         }

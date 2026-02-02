@@ -301,7 +301,7 @@ struct UserFormView: View {
                 await authViewModel.login(email: email, password: password)
                 
                 // Update hasUsers in AuthViewModel
-                authViewModel.hasUsers = true
+//                authViewModel.hasUsers = true
                 
             } catch {
                 await MainActor.run {

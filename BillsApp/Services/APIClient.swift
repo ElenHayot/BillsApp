@@ -12,11 +12,20 @@ final class APIClient {
 
     //private let baseURL = URL(string: "http://localhost:8000/api/v1")!
     private let baseURL = URL(string: "http://172.20.10.3:8000/api/v1")!
+    //private let baseURL = URL(string: "http://192.168.1.219:8000/api/v1")!
     
     // Lock to avoid simultanous multiple refreshes
     private var isRefreshing = false
     private var refreshTask: Task<String, Error>?
     private let decoder = JSONDecoder()
+    
+    // Custom URLSession with shorter timeout
+    private lazy var session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10.0 // 10 seconds timeout
+        config.timeoutIntervalForResource = 15.0 // 15 seconds timeout
+        return URLSession(configuration: config)
+    }()
 
     private init() {
         decoder.dateDecodingStrategy = .iso8601
@@ -35,7 +44,7 @@ final class APIClient {
             currentRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
-        let (data, response) = try await URLSession.shared.data(for: currentRequest)
+        let (data, response) = try await session.data(for: currentRequest)
         
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -51,7 +60,7 @@ final class APIClient {
             
             // Retry request with new access token
             currentRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
-            let (retryData, retryResponse) = try await URLSession.shared.data(for: currentRequest)
+            let (retryData, retryResponse) = try await session.data(for: currentRequest)
             
             guard let retryHttp = retryResponse as? HTTPURLResponse, retryHttp.statusCode == 200 else {
                 throw URLError(.userAuthenticationRequired)
@@ -74,9 +83,10 @@ final class APIClient {
         
         if let token = AuthStorage.shared.accessToken {
             currentRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("🔑 Token ajouté à la requête = \(token)")
         }
         
-        let (_, response) = try await URLSession.shared.data(for: currentRequest)
+        let (_, response) = try await session.data(for: currentRequest)
         
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -87,7 +97,7 @@ final class APIClient {
             let newToken = try await refreshAccessToken()
             
             currentRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
-            let (_, retryResponse) = try await URLSession.shared.data(for: currentRequest)
+            let (_, retryResponse) = try await session.data(for: currentRequest)
             
             guard let retryHttp = retryResponse as? HTTPURLResponse,
                   (200...299).contains(retryHttp.statusCode) else {
@@ -124,7 +134,7 @@ final class APIClient {
             let body = ["refresh_token": refreshToken]
             request.httpBody = try JSONEncoder().encode(body)
             
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw URLError(.badServerResponse)
@@ -193,7 +203,7 @@ final class APIClient {
             .joined(separator: "&")
             .data(using: .utf8)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw URLError(.userAuthenticationRequired)
@@ -226,9 +236,9 @@ final class APIClient {
         request.httpBody = try JSONEncoder().encode(body)
         
         // Try to logout and clear
-        _ = try? await URLSession.shared.data(for: request)
+        _ = try? await session.data(for: request)
         
-        // Clear all local tokens
+        // Clear local tokens
         AuthStorage.shared.accessToken = nil
         KeychainManager.shared.deleteRefreshToken()
     }
@@ -283,9 +293,28 @@ final class APIClient {
         request.httpBody = try JSONEncoder().encode(body)
         
         let user = try await performRequest(request, responseType: User.self)
+        
+        // Update local tokens
         AuthStorage.shared.currentUser = user
         
         return user
+    }
+    
+    /// Delete an account (user and all its data)
+    func deleteUser(email: String) async throws {
+        var url = baseURL
+        url.append(path: "users/\(email)/")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        try await performRequestWithoutResponse(_request: request)
+        
+        // Clear local tokens
+        AuthStorage.shared.currentUser = nil
+        AuthStorage.shared.accessToken = nil
+        KeychainManager.shared.deleteRefreshToken()
     }
     
     // MARK: - Categories

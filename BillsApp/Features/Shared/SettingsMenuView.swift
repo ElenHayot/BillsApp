@@ -17,6 +17,7 @@ struct SettingsMenuView: View {
     
     var body: some View {
         Menu {
+            
             Button {
                 showUserEdit = true
             } label: {
@@ -36,6 +37,7 @@ struct SettingsMenuView: View {
             } label: {
                 Label("Se déconnecter", systemImage: "arrow.right.square")
             }
+                
         } label: {
             Image(systemName: "ellipsis.circle")
                 .font(.title3)
@@ -57,5 +59,13 @@ struct SettingsMenuView: View {
         } message: {
             Text("Êtes-vous sûr de vouloir vous déconnecter ?")
         }
+        
+    }
+}
+
+#Preview {
+    NavigationView {
+        SettingsMenuView()
+            .environmentObject(AuthViewModel())
     }
 }

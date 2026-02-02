@@ -15,10 +15,10 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var accessToken: String?
-    @Published var hasUsers = false
+//    @Published var hasUsers = false
     @Published var currentUser: User?
     @Published var tokenType: String?
-    @Published var isCheckingUsers = true
+//    @Published var isCheckingUsers = true
     
     init() {
         Task {
@@ -27,17 +27,19 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    @MainActor
-    func checkIfUsersExist() async {
-        do {
-            let users = try await APIClient.shared.fetchUsers()
-            hasUsers = !users.isEmpty
-        } catch {
-            errorMessage = error.localizedDescription
-            hasUsers = false
-            print("❌ Erreur lors de la vérification des users: \(error)")
-        }
-    }
+//    @MainActor
+//    func checkIfUsersExist() async {
+//        isCheckingUsers = true
+//        do {
+//            let users = try await APIClient.shared.fetchUsers()
+//            hasUsers = !users.isEmpty
+//        } catch {
+//            errorMessage = error.localizedDescription
+//            hasUsers = false
+//            print("❌ Erreur lors de la vérification des users: \(error)")
+//        }
+//        isCheckingUsers = false
+//    }
     
     // MARK: - Check Authentication State
     /// Check if user already connected when launching app
@@ -46,16 +48,17 @@ class AuthViewModel: ObservableObject {
            KeychainManager.shared.getRefreshToken() != nil {
             accessToken = token
             isAuthenticated = true
-            hasUsers = true
-            isCheckingUsers = false
+//            hasUsers = true
+//            isCheckingUsers = false
         } else if KeychainManager.shared.getRefreshToken() != nil {
             await attemptTokenRefresh()
-            hasUsers = true
-            isCheckingUsers = false
-        } else {
-            print("❓ Pas de token, vérification des utilisateurs...")
-            await checkIfUsersExist()
+//            hasUsers = true
+//            isCheckingUsers = false
         }
+//            else {
+//            print("❓ Pas de token, vérification des utilisateurs...")
+//            await checkIfUsersExist()
+//        }
     }
     
     // MARK: - Attempt Token Refresh
@@ -93,7 +96,7 @@ class AuthViewModel: ObservableObject {
         }
         
         isLoading = false
-        isCheckingUsers = false
+//        isCheckingUsers = false
     }
 
     // MARK: - Logout
@@ -115,4 +118,25 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+    
+    // MARK: - Delete account
+    /// Delete a user and all its account data
+    func deleteUser(email: String) {
+        Task {
+            do {
+                try await APIClient.shared.deleteUser(email: email)
+            } catch {
+                print("⚠️ Erreur serveur lors de la suppression du compte utilisateur : \(error)")
+            }
+            
+            await MainActor.run {
+                AuthStorage.shared.accessToken = nil
+                AuthStorage.shared.currentUser = nil
+                KeychainManager.shared.deleteRefreshToken()
+                accessToken = nil
+                isAuthenticated = false
+            }
+        }
+    }
+    
 }

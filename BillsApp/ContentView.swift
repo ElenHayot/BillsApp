@@ -15,9 +15,10 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            if authViewModel.isCheckingUsers {
-                ProgressView("Chargement...")
-            } else if authViewModel.isAuthenticated {
+//            if authViewModel.isCheckingUsers {
+//                ProgressView("Chargement...")
+//            } else
+            if authViewModel.isAuthenticated {
                 MainNavigationView(navigationPath: $navigationPath)
                 .sheet(isPresented: $showSettings) {
                     SettingsView()
@@ -34,11 +35,14 @@ struct ContentView: View {
                 } message: {
                     Text("Êtes-vous sûr de vouloir vous déconnecter ?")
                 }
-            } else if authViewModel.hasUsers {
-                LoginView()
             } else {
-                UserFormView()
+                LoginView()
             }
+//            else if authViewModel.hasUsers {
+//                LoginView()
+//            } else {
+//                UserFormView()
+//            }
         }
         .animation(.easeInOut(duration: 0.3), value: authViewModel.isAuthenticated)
     }

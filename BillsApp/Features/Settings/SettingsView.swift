@@ -14,36 +14,49 @@ struct SettingsView: View {
     
     @State private var showUserEdit = false
     @State private var showLogoutConfirmation = false
+    @State private var showDeleteAccountConfirmation = false
+    @State private var showDeleteAccountSuccess = false
     
     var body: some View {
         ZStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    // Header Card
-                    headerCard
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                    
-                    // User Card
-                    userCard
-                        .padding(.horizontal)
-                        .padding(.top, 16)
-                    
-                    // Preferences Card
-                    preferencesCard
-                        .padding(.horizontal)
-                        .padding(.top, 16)
-                    
-                    // App Card
-                    appCard
-                        .padding(.horizontal)
-                        .padding(.top, 16)
-                    
-                    // Actions Card
-                    actionsCard
-                        .padding(.horizontal)
-                        .padding(.top, 16)
-                        .padding(.bottom, 100)
+            GeometryReader { geometry in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        // Header Card
+                        headerCard
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                        
+                        // User Card
+                        userCard
+                            .padding(.horizontal)
+                            .padding(.top, 16)
+                        
+                        // Preferences Card
+                        preferencesCard
+                            .padding(.horizontal)
+                            .padding(.top, 16)
+                        
+                        // About Card
+                        aboutCard
+                            .padding(.horizontal)
+                            .padding(.top, 16)
+                        
+                        // Actions Card
+                        actionsCard
+                            .padding(.horizontal)
+                            .padding(.top, 16)
+                            .padding(.bottom, 100)
+                        
+                        // Espace visuel
+                        Spacer(minLength: 40)
+                        
+                        // Danger Zone Card (suppression)
+                        dangerZoneCard
+                            .padding(.horizontal)
+                            .padding(.bottom, 100)
+                    }
+                    .frame(minHeight: geometry.size.height)
                 }
             }
             .background(Color(UIColor.systemGroupedBackground))
@@ -59,6 +72,18 @@ struct SettingsView: View {
             }
             Button("Annuler", role: .cancel) {}
         }
+        .alert("Supprimer le compte et toutes ses données ?", isPresented: $showDeleteAccountConfirmation){
+            Button("Supprimer le compte", role: .destructive) {
+                Task {
+                    authViewModel.deleteUser(email: AuthStorage.shared.currentUser?.email ?? "")
+                    showDeleteAccountSuccess = true
+                }
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Êtes-vous sûr de vouloir supprimer le compte et toutes ses données ? Attention, cette action est irréversible")
+        }
+        .alert("Compte utilisateur supprimé avec succès !", isPresented: $showDeleteAccountSuccess) {}
     }
     
     // MARK: - Header Card
@@ -167,7 +192,7 @@ struct SettingsView: View {
     
     // MARK: - App Card
     
-    private var appCard: some View {
+    private var aboutCard: some View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "info.circle.fill")
@@ -209,14 +234,62 @@ struct SettingsView: View {
                     
                     Text("Se déconnecter")
                         .font(.headline)
-                        .foregroundColor(.red)
-                    
+                        .foregroundColor(.primary)
+
                     Spacer()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
                 .background(Color(UIColor.systemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+            
+            Spacer()
+        }
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - Danger Zone Card
+
+    private var dangerZoneCard: some View {
+        VStack(spacing: 8) {
+            Text("Zone dangereuse")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.red.opacity(0.7))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+            
+            Button {
+                showDeleteAccountConfirmation = true
+            } label: {
+                HStack {
+                    Image(systemName: "trash.fill")
+                        .font(.title3)
+                        .foregroundColor(.white)
+                    
+                    Text("Supprimer le compte")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: [Color.red, Color.red.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                )
             }
             .buttonStyle(.plain)
         }

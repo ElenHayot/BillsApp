@@ -14,35 +14,49 @@ struct LoginView: View {
     
     @State private var email = ""
     @State private var password = ""
+    @State private var showUserForm = false
 
     var body: some View {
-        VStack(spacing: 16) {
+        NavigationStack() {
+            VStack(spacing: 16) {
 
-            Text("Connexion")
-                .font(.largeTitle)
-            
-            TextField("Email", text: $email)
-                .textFieldStyle(.roundedBorder)
+                Text("Connexion")
+                    .font(.largeTitle)
+                
+                TextField("Email", text: $email)
+                    .textFieldStyle(.roundedBorder)
 
-            SecureField("Mot de passe", text: $password)
-                .textFieldStyle(.roundedBorder)
+                SecureField("Mot de passe", text: $password)
+                    .textFieldStyle(.roundedBorder)
 
-            if authVM.isLoading {
-                ProgressView()
-            }
+                if authVM.isLoading {
+                    ProgressView()
+                }
 
-            Button("Connexion") {
-                Task {
-                    await authVM.login(email: email, password: password)
+                Button("Connexion") {
+                    Task {
+                        await authVM.login(email: email, password: password)
+                    }
+                }
+                .disabled(email.isEmpty || password.isEmpty)
+                
+                Divider()
+                
+                Button("Créer un compte") {
+                    showUserForm = true
+                }
+                .foregroundColor(.blue)
+
+                if let error = authVM.errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
                 }
             }
-            .disabled(email.isEmpty || password.isEmpty)
-
-            if let error = authVM.errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
+            .padding()
+            .navigationDestination(isPresented: $showUserForm) {
+                UserFormView()
             }
         }
-        .padding()
+        
     }
 }
