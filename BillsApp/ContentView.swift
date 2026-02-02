@@ -15,9 +15,6 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-//            if authViewModel.isCheckingUsers {
-//                ProgressView("Chargement...")
-//            } else
             if authViewModel.isAuthenticated {
                 MainNavigationView(navigationPath: $navigationPath)
                 .sheet(isPresented: $showSettings) {
@@ -38,11 +35,6 @@ struct ContentView: View {
             } else {
                 LoginView()
             }
-//            else if authViewModel.hasUsers {
-//                LoginView()
-//            } else {
-//                UserFormView()
-//            }
         }
         .animation(.easeInOut(duration: 0.3), value: authViewModel.isAuthenticated)
     }

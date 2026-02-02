@@ -778,7 +778,7 @@ struct ScanProcessingView: View {
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         
-        if let newProvider = await providerViewModel.createProvider(name: providerToCreate) {
+        if let _ = await providerViewModel.createProvider(name: providerToCreate) {
             await viewModel.loadProviders()
             
             if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {

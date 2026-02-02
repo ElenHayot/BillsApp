@@ -19,7 +19,7 @@ struct MainNavigationView: View {
             
             DashboardView(navigationPath: $navigationPath)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: toolbarPlacement) {
                     SettingsMenuView()
                 }
             }
@@ -31,7 +31,7 @@ struct MainNavigationView: View {
                     year: Calendar.current.component(.year, from: Date())
                 )
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: toolbarPlacement) {
                         SettingsMenuView()
                     }
                 }
@@ -47,11 +47,19 @@ struct MainNavigationView: View {
                     }
                 }
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: toolbarPlacement) {
                         SettingsMenuView()
                     }
                 }
             }
         }
     }
+}
+
+var toolbarPlacement: ToolbarItemPlacement {
+    #if os(iOS)
+    .navigationBarTrailing
+    #else
+    .primaryAction
+    #endif
 }

@@ -70,7 +70,7 @@ struct BillFormView: View {
                         .padding(.bottom, 100)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .task {
             await viewModel.loadCategories()
@@ -135,7 +135,7 @@ struct BillFormView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -171,7 +171,7 @@ struct BillFormView: View {
                     #endif
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(Color(UIColor.systemGray6))
+                    .background(Color.textFieldBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
@@ -186,7 +186,7 @@ struct BillFormView: View {
                         .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.textFieldBackground)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     Picker("Sélectionner catégorie", selection: $selectedCategoryId) {
@@ -204,7 +204,7 @@ struct BillFormView: View {
                     .pickerStyle(.menu)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(Color(UIColor.systemGray6))
+                    .background(Color.textFieldBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
@@ -220,7 +220,7 @@ struct BillFormView: View {
                         .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.textFieldBackground)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     Picker("Sélectionner fournisseur", selection: $selectedProviderId) {
@@ -232,7 +232,7 @@ struct BillFormView: View {
                     .pickerStyle(.menu)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(Color(UIColor.systemGray6))
+                    .background(Color.textFieldBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
@@ -251,7 +251,7 @@ struct BillFormView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -265,7 +265,7 @@ struct BillFormView: View {
             .font(.headline)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
             .buttonStyle(.plain)
@@ -312,7 +312,7 @@ struct BillFormView: View {
         placeholder: String,
         text: Binding<String>,
         field: Field,
-        keyboardType: UIKeyboardType = .default
+        keyboardType: AppKeyboardType = .default
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -327,7 +327,7 @@ struct BillFormView: View {
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -348,7 +348,7 @@ struct BillFormView: View {
                 #endif
                 .frame(height: 80)
                 .padding(8)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -485,7 +485,7 @@ struct BillFormView: View {
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         
-        if let newProvider = await providerViewModel.createProvider(name: providerToCreate) {
+        if let _ = await providerViewModel.createProvider(name: providerToCreate) {
             await viewModel.loadProviders()
             
             // Update bill once the provider is created and save

@@ -67,7 +67,7 @@ struct CategoryFormView: View {
                         .padding(.bottom, 100)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -118,7 +118,7 @@ struct CategoryFormView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -208,7 +208,7 @@ struct CategoryFormView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -224,7 +224,7 @@ struct CategoryFormView: View {
             .font(.headline)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
             .buttonStyle(.plain)
@@ -284,7 +284,7 @@ struct CategoryFormView: View {
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }

@@ -44,7 +44,7 @@ struct UserEditView: View {
                         .padding(.bottom, 100)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .onAppear {
             loadUserData()
@@ -94,7 +94,7 @@ struct UserEditView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -113,7 +113,7 @@ struct UserEditView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -177,7 +177,7 @@ struct UserEditView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -269,7 +269,7 @@ struct UserEditView: View {
         
         do {
             // currentUser already updated in APIService
-            try await viewModel.updateUser(
+            let _ = try await viewModel.updateUser(
                 email: email,
                 password: showPasswordChange ? newPassword : currentPassword
             )
@@ -282,7 +282,7 @@ struct UserEditView: View {
         title: String,
         placeholder: String,
         text: Binding<String>,
-        keyboardType: UIKeyboardType = .default
+        keyboardType: AppKeyboardType = .default
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -297,7 +297,7 @@ struct UserEditView: View {
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -318,7 +318,7 @@ struct UserEditView: View {
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }

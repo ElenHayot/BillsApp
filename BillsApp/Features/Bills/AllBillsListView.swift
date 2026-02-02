@@ -80,7 +80,7 @@ struct AllBillsListView: View {
                         .padding(.top, 16)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .task {
             await viewModel.loadBills(year: selectedYear)
@@ -191,7 +191,7 @@ struct AllBillsListView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -266,7 +266,7 @@ struct AllBillsListView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         .transition(.move(edge: .top).combined(with: .opacity))
@@ -371,7 +371,7 @@ struct AllBillsListView: View {
                 }
             }
             .padding(.vertical, 8)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }

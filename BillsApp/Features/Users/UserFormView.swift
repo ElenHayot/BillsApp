@@ -49,7 +49,7 @@ struct UserFormView: View {
                         .padding(.bottom, 100)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .frame(width: 400)
     }
@@ -76,7 +76,7 @@ struct UserFormView: View {
                         .padding(.bottom, 100)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .navigationTitle("Bienvenue")
         #if os(iOS)
@@ -107,7 +107,7 @@ struct UserFormView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground.opacity(0.95))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -118,12 +118,20 @@ struct UserFormView: View {
     private var formCard: some View {
         VStack(spacing: 20) {
             // Email
+            #if os(iOS)
             formField(
                 title: "Email",
                 placeholder: "votre@email.com",
                 text: $email,
                 keyboardType: .emailAddress
             )
+            #else
+            formField(
+                title: "Email",
+                placeholder: "votre@email.com",
+                text: $email
+            )
+            #endif
             
             // Password
             formSecureField(
@@ -144,7 +152,7 @@ struct UserFormView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -227,7 +235,7 @@ struct UserFormView: View {
         title: String,
         placeholder: String,
         text: Binding<String>,
-        keyboardType: UIKeyboardType = .default
+        keyboardType: AppKeyboardType = .default
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -242,7 +250,7 @@ struct UserFormView: View {
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -263,7 +271,7 @@ struct UserFormView: View {
                 #endif
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(UIColor.systemGray6))
+                .background(Color.textFieldBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -295,13 +303,10 @@ struct UserFormView: View {
         Task {
             do {
                 // Create user
-                try await viewModel.createUser(email: email, password: password)
+                let _ = try await viewModel.createUser(email: email, password: password)
                 
                 // Connect user
                 await authViewModel.login(email: email, password: password)
-                
-                // Update hasUsers in AuthViewModel
-//                authViewModel.hasUsers = true
                 
             } catch {
                 await MainActor.run {
@@ -333,3 +338,4 @@ struct UserFormView: View {
         let message: String
     }
 }
+

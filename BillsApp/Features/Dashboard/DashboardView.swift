@@ -99,8 +99,9 @@ struct DashboardView: View {
                         }
                     }
                 }
-                .background(Color(UIColor.systemGroupedBackground))
+                .background(Color.systemGroupedBackground)
                 
+                #if os(iOS)
                 // Floating scan button
                 VStack {
                     Spacer()
@@ -108,6 +109,7 @@ struct DashboardView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 34) // Safe area bottom + padding
                 }
+                #endif
             }
             .task {
                 await viewModel.loadDashboard(year: selectedYear)
@@ -172,7 +174,7 @@ struct DashboardView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -196,7 +198,7 @@ struct DashboardView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
             
@@ -214,7 +216,7 @@ struct DashboardView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
         }
@@ -282,7 +284,7 @@ struct DashboardView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
@@ -316,7 +318,7 @@ struct DashboardView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color(UIColor.systemBackground))
+                    .background(Color.cardBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
@@ -336,7 +338,7 @@ struct DashboardView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color(UIColor.systemBackground))
+                    .background(Color.cardBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
@@ -356,7 +358,7 @@ struct DashboardView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color(UIColor.systemBackground))
+                    .background(Color.cardBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)

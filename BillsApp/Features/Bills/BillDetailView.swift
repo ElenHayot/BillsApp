@@ -36,7 +36,7 @@ struct BillDetailView: View {
                         .padding(.bottom, 100)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.systemGroupedBackground)
         }
         .alert("Supprimer cette facture ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
@@ -81,7 +81,7 @@ struct BillDetailView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 24)
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
@@ -122,7 +122,7 @@ struct BillDetailView: View {
                 }
             }
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
