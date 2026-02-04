@@ -14,6 +14,11 @@ struct CategoriesListView: View {
     @State private var categoryToEdit: Category?
     @State private var categoryToDelete: Category?
     @State private var showDeleteConfirmation = false
+    @State var year: Int
+    
+    init(year: Int) {
+        self.year = year
+    }
     
     var body: some View {
         ZStack {

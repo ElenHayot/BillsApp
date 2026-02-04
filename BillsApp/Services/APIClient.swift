@@ -277,9 +277,9 @@ final class APIClient {
     }
     
     /// Update an existing user
-    func updateUser(email: String, password: String) async throws -> User {
+    func updateUser(userId: Int, email: String, password: String) async throws -> User {
         var url = baseURL
-        url.append(path: "users/\(email)")
+        url.append(path: "users/\(userId)")
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
@@ -301,9 +301,9 @@ final class APIClient {
     }
     
     /// Delete an account (user and all its data)
-    func deleteUser(email: String) async throws {
+    func deleteUser(userId: Int) async throws {
         var url = baseURL
-        url.append(path: "users/\(email)/")
+        url.append(path: "users/\(userId)/")
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"

@@ -17,6 +17,11 @@ struct ProvidersListView: View {
     @State private var providerToEdit: Provider?
     @State private var providerToDelete: Provider?
     @State private var showDeleteConfirmation = false
+    @State var year: Int
+    
+    init(year: Int) {
+        self.year = year
+    }
 
     var body: some View {
         ZStack {

@@ -96,10 +96,10 @@ class AuthViewModel: ObservableObject {
     
     // MARK: - Delete account
     /// Delete a user and all its account data
-    func deleteUser(email: String) {
+    func deleteUser(userId: Int) {
         Task {
             do {
-                try await APIClient.shared.deleteUser(email: email)
+                try await APIClient.shared.deleteUser(userId: userId)
             } catch {
                 print("⚠️ Erreur serveur lors de la suppression du compte utilisateur : \(error)")
             }

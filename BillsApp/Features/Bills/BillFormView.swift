@@ -321,7 +321,7 @@ struct BillFormView: View {
             
             TextField(placeholder, text: text)
                 #if os(iOS)
-                .keyboardType(keyboardType)
+                .keyboardType(keyboardType.uiKeyboardType)
                 .focused($focusedField, equals: field)
                 .autocapitalization(.words)
                 #endif

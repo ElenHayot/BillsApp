@@ -75,7 +75,7 @@ struct SettingsView: View {
         .alert("Supprimer le compte et toutes ses données ?", isPresented: $showDeleteAccountConfirmation){
             Button("Supprimer le compte", role: .destructive) {
                 Task {
-                    authViewModel.deleteUser(email: AuthStorage.shared.currentUser?.email ?? "")
+                    authViewModel.deleteUser(userId: AuthStorage.shared.currentUser?.userId ?? 0)
                     showDeleteAccountSuccess = true
                 }
             }

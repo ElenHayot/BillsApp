@@ -15,13 +15,13 @@ class UserEditViewModel: ObservableObject {
     @Published var successMessage: String?
     @Published var shouldDismiss = false
     
-    func updateUser(email: String, password: String) async throws -> User {
+    func updateUser(userId: Int, email: String, password: String) async throws -> User {
         isLoading = true
         errorMessage = nil
         successMessage = nil
         
         do {
-            let response = try await APIClient.shared.updateUser(email: email, password: password)
+            let response = try await APIClient.shared.updateUser(userId: userId, email: email, password: password)
             
             successMessage = "Profil mis à jour avec succès"
             shouldDismiss = true

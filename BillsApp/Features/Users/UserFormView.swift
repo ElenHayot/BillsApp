@@ -244,7 +244,7 @@ struct UserFormView: View {
             
             TextField(placeholder, text: text)
                 #if os(iOS)
-                .keyboardType(keyboardType)
+                .keyboardType(keyboardType.uiKeyboardType)
                 .textContentType(.emailAddress)
                 .autocapitalization(.none)
                 #endif

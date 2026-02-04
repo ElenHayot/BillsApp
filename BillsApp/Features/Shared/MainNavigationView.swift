@@ -36,14 +36,29 @@ struct MainNavigationView: View {
                     }
                 }
             }
-            .navigationDestination(for: String.self) { destination in
+            .navigationDestination(for: NavigationDestination.self) { destination in
                 Group {
-                    if destination == "categories" {
-                        CategoriesListView()
-                    } else if destination == "all-bills" {
-                        AllBillsListView(year: Calendar.current.component(.year, from: Date()))
-                    } else if destination == "providers" {
-                        ProvidersListView()
+//                    if destination == "categories" {
+//                        CategoriesListView()
+//                    } else if destination == "all-bills" {
+//                        AllBillsListView(year: Calendar.current.component(.year, from: Date()))
+//                    } else if destination == "providers" {
+//                        ProvidersListView()
+//                    }
+                    switch destination {
+                        case .categories(let year):
+                            CategoriesListView(year: year)
+                        case .allBills(let year):
+                            AllBillsListView(year: year)
+                        case .providers(let year):
+                            ProvidersListView(year: year)
+                        case .category(let categoryStats, let year):
+                            BillsListView(
+                                categoryId: categoryStats.categoryId,
+                                categoryName: categoryStats.categoryName,
+                                categoryColor: categoryStats.categoryColor,
+                                year: year
+                        )
                     }
                 }
                 .toolbar {

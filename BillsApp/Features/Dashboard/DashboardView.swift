@@ -265,18 +265,33 @@ struct DashboardView: View {
                 
                 // Chart content
                 if let dashboard = viewModel.dashboard {
+//                    if displayMode == .pie {
+//                        CategoryPieChartView(
+//                            categories: dashboard.byCategory,
+//                            onCategorySelected: { category in
+//                                navigationPath.append(category)
+//                            }
+//                        )
+//                    } else {
+//                        CategoryBarChartView(
+//                            categories: dashboard.byCategory,
+//                            onCategorySelected: { category in
+//                                navigationPath.append(category)
+//                            }
+//                        )
+//                    }
                     if displayMode == .pie {
                         CategoryPieChartView(
                             categories: dashboard.byCategory,
                             onCategorySelected: { category in
-                                navigationPath.append(category)
+                                navigationPath.append(NavigationDestination.category(category, year: selectedYear))
                             }
                         )
                     } else {
                         CategoryBarChartView(
                             categories: dashboard.byCategory,
                             onCategorySelected: { category in
-                                navigationPath.append(category)
+                                navigationPath.append(NavigationDestination.category(category, year: selectedYear))
                             }
                         )
                     }
@@ -304,8 +319,11 @@ struct DashboardView: View {
             
             HStack(spacing: 12) {
                 // All bills navigate
+//                Button {
+//                    navigationPath.append("all-bills")
+//                }
                 Button {
-                    navigationPath.append("all-bills")
+                    navigationPath.append(NavigationDestination.allBills(year: selectedYear))
                 } label: {
                     VStack(spacing: 8) {
                         Image(systemName: "list.bullet.rectangle")
@@ -324,8 +342,11 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 
                 // Categories navigate
+//                Button {
+//                    navigationPath.append("categories")
+//                }
                 Button {
-                    navigationPath.append("categories")
+                    navigationPath.append(NavigationDestination.categories(year: selectedYear))
                 } label: {
                     VStack(spacing: 8) {
                         Image(systemName: "tag.fill")
@@ -344,8 +365,11 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 
                 // Providers navigate
+//                Button {
+//                    navigationPath.append("providers")
+//                }
                 Button {
-                    navigationPath.append("providers")
+                    navigationPath.append(NavigationDestination.providers(year: selectedYear))
                 } label: {
                     VStack(spacing: 8) {
                         Image(systemName: "building.2")

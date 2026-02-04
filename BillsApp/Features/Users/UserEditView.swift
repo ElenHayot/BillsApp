@@ -270,6 +270,7 @@ struct UserEditView: View {
         do {
             // currentUser already updated in APIService
             let _ = try await viewModel.updateUser(
+                userId: AuthStorage.shared.currentUser!.userId ?? 0,
                 email: email,
                 password: showPasswordChange ? newPassword : currentPassword
             )
@@ -291,7 +292,7 @@ struct UserEditView: View {
             
             TextField(placeholder, text: text)
                 #if os(iOS)
-                .keyboardType(keyboardType)
+                .keyboardType(keyboardType.uiKeyboardType)
                 .textContentType(.emailAddress)
                 .autocapitalization(.none)
                 #endif
