@@ -52,6 +52,13 @@ struct UserFormView: View {
             .background(Color.systemGroupedBackground)
         }
         .frame(width: 400)
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
     }
     
     // IOS layout
@@ -82,6 +89,20 @@ struct UserFormView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
         #endif
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Header Card

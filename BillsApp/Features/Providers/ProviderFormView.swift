@@ -59,6 +59,13 @@ struct ProviderFormView: View {
             .background(Color(UIColor.systemGroupedBackground))
             #endif
         }
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
@@ -214,21 +221,23 @@ struct ProviderFormView: View {
     private func saveProvider() async {
         let savedProvider: Provider?
         
-        if let existingProvider = provider {
-            // Editing
-            savedProvider = await viewModel.updateProvider(
-                providerId: existingProvider.id,
-                name: name
-            )
-        } else {
-            // Creating
-            savedProvider = await viewModel.createProvider(name: name)
-        }
-        
-        if let savedProvider = savedProvider {
-            onSaved(savedProvider)
-            dismiss()
-        }
+        do{
+            if let existingProvider = provider {
+                // Editing
+                savedProvider = try await viewModel.updateProvider(
+                    providerId: existingProvider.id,
+                    name: name
+                )
+            } else {
+                // Creating
+                savedProvider = try await viewModel.createProvider(name: name)
+            }
+            
+            if let savedProvider = savedProvider {
+                onSaved(savedProvider)
+                dismiss()
+            }
+        } catch {}
     }
 }
 

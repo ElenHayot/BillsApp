@@ -49,12 +49,10 @@ struct UserEditView: View {
         .onAppear {
             loadUserData()
         }
-        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
-                viewModel.errorMessage = nil
+        .onChange(of: authViewModel.currentUser) {oldUser, newUser in
+            if let user = newUser {
+                email = user.email
             }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
         }
         .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
             Button("OK") {
@@ -65,6 +63,13 @@ struct UserEditView: View {
             }
         } message: {
             Text(viewModel.successMessage ?? "")
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
     
@@ -185,19 +190,24 @@ struct UserEditView: View {
     // MARK: - Actions Card
     
     private var actionsCard: some View {
-        VStack(spacing: 16) {            if let errorMessage = viewModel.errorMessage, !errorMessage.isEmpty {
+        VStack(spacing: 16) {
+            if let errorMessage = viewModel.errorMessage, !errorMessage.isEmpty {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.red)
+                    
                     Text(errorMessage)
                         .font(.body)
                         .foregroundColor(.red)
                         .multilineTextAlignment(.leading)
+                    
+                    Spacer()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(Color.red.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
             
             // Saving button
@@ -235,13 +245,6 @@ struct UserEditView: View {
             .disabled(viewModel.isLoading || !isFormValid)
         }
         .shadow(color: isFormValid ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 2)
-        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
-                viewModel.errorMessage = nil
-            }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
-        }
     }
     
     // MARK: - Helpers
@@ -269,11 +272,13 @@ struct UserEditView: View {
         
         do {
             // currentUser already updated in APIService
-            let _ = try await viewModel.updateUser(
+            let updatedUser = try await viewModel.updateUser(
                 userId: AuthStorage.shared.currentUser!.userId ?? 0,
                 email: email,
-                password: showPasswordChange ? newPassword : currentPassword
+                password: showPasswordChange ? newPassword : nil
             )
+            
+            authViewModel.updateCurrentUser(updatedUser)
             
         } catch {
         }

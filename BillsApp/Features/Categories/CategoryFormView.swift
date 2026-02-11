@@ -69,15 +69,15 @@ struct CategoryFormView: View {
             }
             .background(Color.systemGroupedBackground)
         }
-        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .padding()
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
             Button("OK") {
-                viewModel.errorMessage = nil
+                viewModel.successMessage = nil
             }
         } message: {
-            Text(viewModel.errorMessage ?? "")
+            Text(viewModel.successMessage ?? "")
         }
-        .padding()
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
             }
@@ -298,21 +298,24 @@ struct CategoryFormView: View {
         let color = selectedColor
         let savedCategory: Category?
         
-        if let existingCategory = category {
-            // Editing
-            savedCategory = await viewModel.updateCategory(
-                categoryId: existingCategory.id,
-                name: name,
-                color: color
-            )
-        } else {
-            // Creating
-            savedCategory = await viewModel.createCategory(name: name, color: color)
-        }
+        do {
+            if let existingCategory = category {
+                // Editing
+                savedCategory = try await viewModel.updateCategory(
+                    categoryId: existingCategory.id,
+                    name: name,
+                    color: color
+                )
+            } else {
+                // Creating
+                savedCategory = try await viewModel.createCategory(name: name, color: color)
+            }
+            
+            if let savedCategory = savedCategory {
+                onSaved(savedCategory)
+                dismiss()
+            }
+        } catch {}
         
-        if let savedCategory = savedCategory {
-            onSaved(savedCategory)
-            dismiss()
-        }
     }
 }

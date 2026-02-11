@@ -125,6 +125,20 @@ struct AllBillsListView: View {
                 Text("Es-tu sûr de vouloir supprimer la facture '\(bill.title)'?")
             }
         }
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Header Card
@@ -381,8 +395,10 @@ struct AllBillsListView: View {
     // MARK: - helpers
     
     private func deleteBill(_ bill: Bill) async {
-        await viewModel.deleteBill(billId: bill.id)
-        billToDelete = nil
+        do {
+            try await viewModel.deleteBill(billId: bill.id)
+            billToDelete = nil
+        } catch {}
     }
     
     private func amountFilterField(title: String, text: Binding<String>) -> some View {

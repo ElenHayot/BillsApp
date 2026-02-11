@@ -1,40 +1,46 @@
-    //
-    //  CreateUserViewModel.swift
-    //  BillsApp
-    //
-    //  Created by Elen Hayot on 20/01/2026.
-    //
+//
+//  CreateUserViewModel.swift
+//  BillsApp
+//
+//  Created by Elen Hayot on 20/01/2026.
+//
 
-    import Foundation
-    import Combine
+import Foundation
+import Combine
 
-    @MainActor
-    final class UserFormViewModel: ObservableObject {
+@MainActor
+final class UserFormViewModel: ObservableObject {
+    
+    @Published var isCreating = false
+    @Published var errorMessage: String?
+    @Published var successMessage: String?
+    
+    func createUser(email: String, password: String) async throws -> User? {
+        isCreating = true
+        errorMessage = nil
         
-        @Published var isLoading = false
-        @Published var errorMessage: String?
-        
-        func createUser(email: String, password: String) async throws -> User? {
-            isLoading = true
-            errorMessage = nil
+        do {
+            let response = try await APIClient.shared.createUser(
+                email: email,
+                password: password
+            )
             
-            do {
-                let response = try await APIClient.shared.createUser(
-                    email: email,
-                    password: password
-                )
-                
-                // Set hasUsers = true
-                UserDefaults.standard.set(true, forKey: "hasUsers")
-                
-                isLoading = false
-                
-                return response
-                
-            } catch {
-                isLoading = false
-                errorMessage = "Erreur lors de la création du compte"
-                throw error
-            }
+            // Set hasUsers = true
+            UserDefaults.standard.set(true, forKey: "hasUsers")
+            successMessage = "Profil créé avec succès"
+            isCreating = false
+            
+            return response
+            
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isCreating = false
+            throw error
+            
+        } catch {
+            errorMessage = "Une erreur inattendue est survenue"
+            isCreating = false
+            throw error
         }
     }
+}

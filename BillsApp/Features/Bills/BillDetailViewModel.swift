@@ -13,10 +13,11 @@ final class BillDetailViewModel: ObservableObject {
 
     @Published var isDeleting = false
     @Published var errorMessage: String?
+    @Published var successMessage: String?
 
     func deleteBill(
         billId: Int
-    ) async -> Bool {
+    ) async throws -> Bool {
 
         isDeleting = true
         defer { isDeleting = false }
@@ -25,11 +26,18 @@ final class BillDetailViewModel: ObservableObject {
             try await APIClient.shared.deleteBill(
                 billId: billId
             )
+            successMessage = "Facture supprimée avec succès !"
             return true
-        }
-        catch {
-            errorMessage = error.localizedDescription
-            return false
+            
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isDeleting = false
+            throw error
+            
+        } catch {
+            errorMessage = "Une erreur inattendue est survenue"
+            isDeleting = false
+            throw error
         }
     }
 }

@@ -41,7 +41,7 @@ struct ProviderDetailView: View {
         .alert("Supprimer ce fournisseur ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
                 Task {
-                    let success = await viewModel.deleteProvider(
+                    let success = try await viewModel.deleteProvider(
                         providerId: provider.id
                     )
                     if success {
@@ -54,6 +54,13 @@ struct ProviderDetailView: View {
                 }
             }
             Button("Annuler", role: .cancel) {}
+        }
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {

@@ -31,6 +31,7 @@ class AuthViewModel: ObservableObject {
         if let token = AuthStorage.shared.accessToken,
            KeychainManager.shared.getRefreshToken() != nil {
             accessToken = token
+            self.currentUser = AuthStorage.shared.currentUser
             isAuthenticated = true
         } else if KeychainManager.shared.getRefreshToken() != nil {
             await attemptTokenRefresh()
@@ -66,9 +67,12 @@ class AuthViewModel: ObservableObject {
             
             print("✅ Login réussi")
 
+        } catch let error as NetworkError {
+            self.errorMessage = error.errorDescription
+            self.isLoading = false
         } catch {
-            errorMessage = "Échec de la connexion. Vérifiez vos identifiants."
-            print("❌ Login error: \(error)")
+            self.errorMessage = "Une erreur inattendue s'est produite"
+            self.isLoading = false
         }
         
         isLoading = false
@@ -92,6 +96,12 @@ class AuthViewModel: ObservableObject {
                 isAuthenticated = false
             }
         }
+    }
+    
+    // MARK: - Update account info
+    func updateCurrentUser(_ user: User) {
+        self.currentUser = user
+        AuthStorage.shared.currentUser = user
     }
     
     // MARK: - Delete account

@@ -13,11 +13,12 @@ final class CategoryFormViewModel: ObservableObject {
     
     @Published var isSaving = false
     @Published var errorMessage: String?
+    @Published var successMessage: String?
     
     func createCategory(
         name: String,
         color: String
-    ) async -> Category? {
+    ) async throws -> Category? {
         
         isSaving = true
         defer { isSaving = false }
@@ -27,10 +28,18 @@ final class CategoryFormViewModel: ObservableObject {
                 name: name,
                 color: color
             )
+            
+            successMessage = "Catégorie créée avec succès !"
             return category
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isSaving = false
+            throw error
+            
         } catch {
-            errorMessage = error.localizedDescription
-            return nil
+            errorMessage = "Une erreur inattendue est survenue"
+            isSaving = false
+            throw error
         }
     }
     
@@ -38,7 +47,7 @@ final class CategoryFormViewModel: ObservableObject {
         categoryId: Int,
         name: String,
         color: String
-    ) async -> Category? {
+    ) async throws -> Category? {
         
         isSaving = true
         defer { isSaving = false }
@@ -49,10 +58,19 @@ final class CategoryFormViewModel: ObservableObject {
                 name: name,
                 color: color
             )
+            
+            successMessage = "Catégorie mise à jour avec succès !"
             return category
+            
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isSaving = false
+            throw error
+            
         } catch {
-            errorMessage = error.localizedDescription
-            return nil
+            errorMessage = "Une erreur inattendue est survenue"
+            isSaving = false
+            throw error
         }
     }
 }

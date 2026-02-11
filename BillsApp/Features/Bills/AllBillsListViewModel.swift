@@ -16,6 +16,7 @@ final class AllBillsListViewModel: ObservableObject {
     @Published var categories: [Category] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var successMessage: String?
     @Published var isDeleting: Bool = false
 
     func loadBills(
@@ -46,8 +47,12 @@ final class AllBillsListViewModel: ObservableObject {
                 let categoryColor = categories.first(where: { $0.id == bill.bill.categoryId })?.color
                 return BillWithCategory(bill: bill.bill, categoryColor: categoryColor)
             }
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isLoading = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
         }
         
         isLoading = false
@@ -55,7 +60,7 @@ final class AllBillsListViewModel: ObservableObject {
     
     func deleteBill(
         billId: Int
-    ) async {
+    ) async throws {
         isDeleting = true
         defer { isDeleting = false }
 
@@ -64,9 +69,16 @@ final class AllBillsListViewModel: ObservableObject {
                 billId: billId
             )
             bills.removeAll { $0.id == billId }
-        }
-        catch {
-            errorMessage = error.localizedDescription
+            successMessage = "Facture supprimée avec succès !"
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isDeleting = false
+            throw error
+            
+        } catch {
+            errorMessage = "Une erreur inattendue est survenue"
+            isDeleting = false
+            throw error
         }
     }
     

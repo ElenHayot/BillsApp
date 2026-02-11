@@ -41,20 +41,26 @@ struct BillDetailView: View {
         .alert("Supprimer cette facture ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
                 Task {
-                    let success = await viewModel.deleteBill(
-                        billId: bill.id
-                    )
-                    if success {
-                        print("✅ Suppression réussie, suppression locale pour bill \(bill.id)")
-                        // ✅ Supprime directement dans le viewModel
-                        listViewModel.bills.removeAll { $0.id == bill.id }
-                        dismiss()
-                    } else {
-                        print("❌ Échec de la suppression")
-                    }
+                    do {
+                        let success = try await viewModel.deleteBill(
+                            billId: bill.id
+                        )
+                        if success {
+                            print("✅ Suppression réussie, suppression locale pour bill \(bill.id)")
+                            // ✅ Supprime directement dans le viewModel
+                            listViewModel.bills.removeAll { $0.id == bill.id }
+                        }
+                    } catch {}
                 }
             }
             Button("Annuler", role: .cancel) {}
+        }
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {

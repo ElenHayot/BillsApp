@@ -141,6 +141,13 @@ struct DashboardView: View {
                 }
             }
             #endif
+            .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("OK") {
+                    viewModel.errorMessage = nil
+                }
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
 //        }
     }
     
@@ -265,21 +272,6 @@ struct DashboardView: View {
                 
                 // Chart content
                 if let dashboard = viewModel.dashboard {
-//                    if displayMode == .pie {
-//                        CategoryPieChartView(
-//                            categories: dashboard.byCategory,
-//                            onCategorySelected: { category in
-//                                navigationPath.append(category)
-//                            }
-//                        )
-//                    } else {
-//                        CategoryBarChartView(
-//                            categories: dashboard.byCategory,
-//                            onCategorySelected: { category in
-//                                navigationPath.append(category)
-//                            }
-//                        )
-//                    }
                     if displayMode == .pie {
                         CategoryPieChartView(
                             categories: dashboard.byCategory,
@@ -319,9 +311,6 @@ struct DashboardView: View {
             
             HStack(spacing: 12) {
                 // All bills navigate
-//                Button {
-//                    navigationPath.append("all-bills")
-//                }
                 Button {
                     navigationPath.append(NavigationDestination.allBills(year: selectedYear))
                 } label: {
@@ -342,9 +331,6 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 
                 // Categories navigate
-//                Button {
-//                    navigationPath.append("categories")
-//                }
                 Button {
                     navigationPath.append(NavigationDestination.categories(year: selectedYear))
                 } label: {
@@ -365,9 +351,6 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 
                 // Providers navigate
-//                Button {
-//                    navigationPath.append("providers")
-//                }
                 Button {
                     navigationPath.append(NavigationDestination.providers(year: selectedYear))
                 } label: {

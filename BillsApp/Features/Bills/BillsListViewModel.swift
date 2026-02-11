@@ -13,7 +13,9 @@ final class BillsListViewModel: ObservableObject {
 
     @Published var bills: [Bill] = []
     @Published var isLoading = false
+    @Published var isDeleting = false
     @Published var errorMessage: String?
+    @Published var successMessage: String?
 
     func loadBills(
         categoryId: Int,
@@ -28,23 +30,41 @@ final class BillsListViewModel: ObservableObject {
                 categoryId: categoryId,
                 year: year
             )
+            
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isLoading = false
+            
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
         }
 
         isLoading = false
     }
     
-    func deleteBill(billId: Int) async {
+    func deleteBill(billId: Int) async throws {
+        isDeleting = true
         do {
             try await APIClient.shared.deleteBill(
                 billId: billId
             )
             // Remove from local list
             bills.removeAll { $0.id == billId }
+            successMessage = "Facture supprimée avec succès !"
+            
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isDeleting = false
+            throw error
+            
         } catch {
-            errorMessage = "Erreur lors de la suppression de la facture: \(error.localizedDescription)"
+            errorMessage = "Une erreur inattendue est survenue"
+            isDeleting = false
+            throw error
         }
+        
+        isDeleting = false
     }
 }
 

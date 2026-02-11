@@ -15,7 +15,7 @@ class UserEditViewModel: ObservableObject {
     @Published var successMessage: String?
     @Published var shouldDismiss = false
     
-    func updateUser(userId: Int, email: String, password: String) async throws -> User {
+    func updateUser(userId: Int, email: String, password: String? = nil) async throws -> User {
         isLoading = true
         errorMessage = nil
         successMessage = nil
@@ -29,10 +29,14 @@ class UserEditViewModel: ObservableObject {
             
             return response
             
-        } catch {
-            errorMessage = "Erreur lors de la mise à jour : \(error.localizedDescription)"
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
             isLoading = false
+            throw error
             
+        } catch {
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
             throw error
         }
         

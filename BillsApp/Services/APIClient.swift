@@ -19,7 +19,7 @@ final class APIClient {
     private var refreshTask: Task<String, Error>?
     private let decoder = JSONDecoder()
     
-    // Custom URLSession with shorter timeout
+    // Custom URLSession with short timeout
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10.0 // 10 seconds timeout
@@ -32,7 +32,7 @@ final class APIClient {
     }
     
     // MARK: - Generic Request with Auto-Refresh
-    /// Geneeric method to manage refresh if access token is expired
+    /// Generic method to manage refresh if access token is expired
     private func performRequest<T: Decodable>(
         _ request: URLRequest,
         responseType: T.Type
@@ -47,7 +47,7 @@ final class APIClient {
         let (data, response) = try await session.data(for: currentRequest)
         
         guard let http = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
+            throw NetworkError.badServerResponse
         }
         
         
@@ -63,14 +63,14 @@ final class APIClient {
             let (retryData, retryResponse) = try await session.data(for: currentRequest)
             
             guard let retryHttp = retryResponse as? HTTPURLResponse, retryHttp.statusCode == 200 else {
-                throw URLError(.userAuthenticationRequired)
+                throw NetworkError.unauthorized("Session expirée, veuillez vous reconnecter")
             }
             
             return try decoder.decode(T.self, from: retryData)
         }
         
         guard http.statusCode == 200 else {
-            throw URLError(.badServerResponse)
+            throw parseBackendError(from: data, statusCode: http.statusCode)
         }
         
         return try decoder.decode(T.self, from: data)
@@ -86,10 +86,10 @@ final class APIClient {
             print("🔑 Token ajouté à la requête = \(token)")
         }
         
-        let (_, response) = try await session.data(for: currentRequest)
+        let (data, response) = try await session.data(for: currentRequest)
         
         guard let http = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
+            throw NetworkError.badServerResponse
         }
         
         if http.statusCode == 401 {
@@ -106,8 +106,8 @@ final class APIClient {
             return
         }
         
-        guard (200...299).contains(http.statusCode) else {
-            throw URLError(.init(rawValue: http.statusCode))
+        guard http.statusCode == 200 else {
+            throw parseBackendError(from: data, statusCode: http.statusCode)
         }
     }
     
@@ -203,10 +203,24 @@ final class APIClient {
             .joined(separator: "&")
             .data(using: .utf8)
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as URLError {
+            if error.code == .timedOut {
+                throw NetworkError.timeout
+            }
+            // Autres erreurs réseau
+            throw NetworkError.badServerResponse
+        }
+        
+        guard let http = response as? HTTPURLResponse else {
+            throw NetworkError.badServerResponse
+        }
 
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw URLError(.userAuthenticationRequired)
+        guard http.statusCode == 200 else {
+            // Get backend error message
+            throw parseBackendError(from: data, statusCode: http.statusCode)
         }
         
         let loginResponse = try decoder.decode(LoginResponse.self, from: data)
@@ -277,26 +291,31 @@ final class APIClient {
     }
     
     /// Update an existing user
-    func updateUser(userId: Int, email: String, password: String) async throws -> User {
+    func updateUser(userId: Int, email: String, password: String? = nil) async throws -> User {
         var url = baseURL
-        url.append(path: "users/\(userId)")
+        url.append(path: "users/\(userId)/")
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: String] = [
-            "email": email,
-            "password": password
+        var body: [String: String] = [
+            "email": email
         ]
         
+        if password != nil {
+            print("je suis passé dans password != nil")
+            body["password"] = password!
+        }
+            
         request.httpBody = try JSONEncoder().encode(body)
+        print("in APIClient, updateUser : password is \(String(describing: password))")
         
         let user = try await performRequest(request, responseType: User.self)
         
         // Update local tokens
         AuthStorage.shared.currentUser = user
-        
+        print("in APIClient, updateUser : user.emeail is \(user.email)")
         return user
     }
     
@@ -609,6 +628,38 @@ final class APIClient {
         
         try await performRequestWithoutResponse(_request: request)
     }
+    
+    // MARK: - helpers
+    
+    // Parse backend errors
+    private func parseBackendError(from data: Data, statusCode: Int) -> NetworkError {
+        // Debug
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("📦 JSON brut reçu du backend: \(jsonString)")
+        }
+        
+        // Try to decode wrapped structure
+        if let wrapper = try? decoder.decode(BackendErrorWrapper.self, from: data) {
+            print("✅ Décodage BackendErrorWrapper réussi")
+            return .backendError(
+                code: wrapper.detail.errorCode,
+                params: wrapper.detail.params
+            )
+        }
+        
+        // Fallback : try to manually extract "detail"
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let detail = json["detail"] as? [String: Any],
+           let errorCode = detail["error_code"] as? String {
+           print("⚠️ Décodage manuel réussi pour error_code: \(errorCode)")
+           return .backendError(code: errorCode, params: nil)
+        }
+        
+        // Dernier fallback : generic message
+        print("⛔ Aucune structure reconnue, fallback générique")
+        return .unknown(statusCode, "Une erreur est survenue")
+    }
+
 }
 
 
@@ -623,3 +674,4 @@ struct RefreshResponse: Decodable {
         case refreshToken = "refresh_token"
     }
 }
+

@@ -23,8 +23,13 @@ final class DashboardViewModel: ObservableObject {
             dashboard = try await APIClient.shared.getDashboard(
                 year: year
             )
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isLoading = false
+            
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
         }
         
         isLoading = false

@@ -16,6 +16,7 @@ final class BillFormViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isSaving = false
     @Published var errorMessage: String?
+    @Published var successMessage: String?
     
     func loadCategories() async {
         isLoading = true
@@ -23,8 +24,13 @@ final class BillFormViewModel: ObservableObject {
         
         do {
             categories = try await APIClient.shared.fetchCategories()
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isLoading = false
+            
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
         }
         
         isLoading = false
@@ -36,8 +42,13 @@ final class BillFormViewModel: ObservableObject {
         
         do {
             providers = try await APIClient.shared.fetchProviders()
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isLoading = false
+            
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
         }
         
         isLoading = false
@@ -51,10 +62,17 @@ final class BillFormViewModel: ObservableObject {
             let provider = try await APIClient.shared.fetchProviders(name: name).first
             isLoading = false
             return provider
-        } catch {
-            errorMessage = error.localizedDescription
+            
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
             isLoading = false
             return nil
+            
+        } catch {
+            errorMessage = "Une erreur inattendue est survenue"
+            isLoading = false
+            return nil
+            
         }
     }
     
@@ -66,7 +84,7 @@ final class BillFormViewModel: ObservableObject {
         providerId: Int?,
         providerName: String,
         comment: String
-    ) async -> Bill? {
+    ) async throws -> Bill? {
         
         isSaving = true
         defer { isSaving = false }
@@ -80,10 +98,18 @@ final class BillFormViewModel: ObservableObject {
                 providerName: providerName,
                 comment: comment
             )
+            
+            successMessage = "Facture créée avec succès !"
             return bill
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isSaving = false
+            throw error
+            
         } catch {
-            errorMessage = error.localizedDescription
-            return nil
+            errorMessage = "Une erreur inattendue est survenue"
+            isSaving = false
+            throw error
         }
     }
     
@@ -96,7 +122,7 @@ final class BillFormViewModel: ObservableObject {
         providerId: Int?,
         providerName: String,
         comment: String
-    ) async -> Bill? {
+    ) async throws -> Bill? {
         
         isSaving = true
         defer { isSaving = false }
@@ -112,10 +138,18 @@ final class BillFormViewModel: ObservableObject {
                 providerName: providerName,
                 comment: comment
             )
+            
+            successMessage = "Facture mise à jour avec succès !"
             return bill
+        } catch let error as NetworkError {
+            errorMessage = error.errorDescription
+            isSaving = false
+            throw error
+            
         } catch {
-            errorMessage = error.localizedDescription
-            return nil
+            errorMessage = "Une erreur inattendue est survenue"
+            isSaving = false
+            throw error
         }
     }
 }

@@ -54,21 +54,35 @@ struct CategoriesListView: View {
                 }
             }
         }
-        .alert("Delete this category?", isPresented: $showDeleteConfirmation) {
-            Button("Delete", role: .destructive) {
+        .alert("Supprimer cette catégorie ?", isPresented: $showDeleteConfirmation) {
+            Button("Supprimer", role: .destructive) {
                 if let category = categoryToDelete {
                     Task {
                         await deleteCategory(category)
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button("Annuler", role: .cancel) {
                 categoryToDelete = nil
             }
         } message: {
             if let category = categoryToDelete {
-                Text("Are you sure you want to delete '\(category.name)'? This action cannot be undone.")
+                Text("Êtes-vous sûr de vouloir supprimer la catégorie '\(category.name)'? Cette action est irrévocable.")
             }
+        }
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
     
@@ -188,9 +202,11 @@ struct CategoriesListView: View {
     // MARK: - helpers
     
     private func deleteCategory(_ category: Category) async {
-        await viewModel.deleteCategory(
-            category: category
-        )
-        categoryToDelete = nil
+        do {
+            try await viewModel.deleteCategory(
+                category: category
+            )
+            categoryToDelete = nil
+        } catch {}
     }
 }

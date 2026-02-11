@@ -73,6 +73,20 @@ struct ProvidersListView: View {
                 Text("Es-tu sûr de vouloir supprimer le fournisseur '\(provider.name)' ?")
             }
         }
+        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Header Card
@@ -206,7 +220,9 @@ struct ProvidersListView: View {
     }
     
     private func deleteProvider(_ provider: Provider) async {
-        await viewModel.deleteProvider(providerId: provider.id)
-        providerToDelete = nil
+        do {
+            try await viewModel.deleteProvider(providerId: provider.id)
+            providerToDelete = nil
+        } catch {}
     }
 }

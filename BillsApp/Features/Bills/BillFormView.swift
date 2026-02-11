@@ -78,13 +78,6 @@ struct BillFormView: View {
         .task {
             await viewModel.loadProviders()
         }
-        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
-                viewModel.errorMessage = nil
-            }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
-        }
         .alert("Créer un nouveau fournisseur ?", isPresented: $showProviderAlert) {
             Button("Non") {
                 // Create bill without creating provider
@@ -100,6 +93,20 @@ struct BillFormView: View {
             }
         } message: {
             Text("Le fournisseur \"\(providerToCreate)\" n'existe pas. Souhaitez-vous le créer ?")
+        }
+        .alert("Success", isPresented: .constant(viewModel.successMessage != nil)) {
+            Button("OK") {
+                viewModel.successMessage = nil
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "")
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
     
@@ -384,35 +391,37 @@ struct BillFormView: View {
         
         let savedBill: Bill?
         
-        if let existingBill = bill {
-            // Editing
-            savedBill = await viewModel.updateBill(
-                billId: existingBill.id,
-                title: title,
-                amount: amountDecimal,
-                date: date,
-                categoryId: categoryId,
-                providerId: providerId,
-                providerName: providerName.isEmpty ? "" : providerName,
-                comment: comment.isEmpty ? "" : comment
-            )
-        } else {
-            // Creating
-            savedBill = await viewModel.createBill(
-                title: title,
-                amount: amountDecimal,
-                date: date,
-                categoryId: categoryId,
-                providerId: providerId,
-                providerName: providerName.isEmpty ? "" : providerName,
-                comment: comment.isEmpty ? "" : comment
-            )
-        }
-        
-        if let savedBill = savedBill {
-            onSaved(savedBill)
-            dismiss()
-        }
+        do {
+            if let existingBill = bill {
+                // Editing
+                savedBill = try await viewModel.updateBill(
+                    billId: existingBill.id,
+                    title: title,
+                    amount: amountDecimal,
+                    date: date,
+                    categoryId: categoryId,
+                    providerId: providerId,
+                    providerName: providerName.isEmpty ? "" : providerName,
+                    comment: comment.isEmpty ? "" : comment
+                )
+            } else {
+                // Creating
+                savedBill = try await viewModel.createBill(
+                    title: title,
+                    amount: amountDecimal,
+                    date: date,
+                    categoryId: categoryId,
+                    providerId: providerId,
+                    providerName: providerName.isEmpty ? "" : providerName,
+                    comment: comment.isEmpty ? "" : comment
+                )
+            }
+            
+            if let savedBill = savedBill {
+                onSaved(savedBill)
+                dismiss()
+            }
+        } catch {}
     }
     
     // Check if a provider is found filtering on given providerName
@@ -449,51 +458,56 @@ struct BillFormView: View {
         // Keep providerName but providerId = nil
         let providerId: Int? = nil
         let savedBill: Bill?
+        do {
+            if let existingBill = bill {
+                // Editing
+                savedBill = try await viewModel.updateBill(
+                    billId: existingBill.id,
+                    title: title,
+                    amount: amountDecimal,
+                    date: date,
+                    categoryId: categoryId,
+                    providerId: providerId,
+                    providerName: providerName.isEmpty ? "" : providerName,
+                    comment: comment.isEmpty ? "" : comment
+                )
+            } else {
+                // Creating
+                savedBill = try await viewModel.createBill(
+                    title: title,
+                    amount: amountDecimal,
+                    date: date,
+                    categoryId: categoryId,
+                    providerId: providerId,
+                    providerName: providerName.isEmpty ? "" : providerName,
+                    comment: comment.isEmpty ? "" : comment
+                )
+            }
+            
+            
+            if let savedBill = savedBill {
+                onSaved(savedBill)
+                dismiss()
+            }
+        } catch {}
         
-        if let existingBill = bill {
-            // Editing
-            savedBill = await viewModel.updateBill(
-                billId: existingBill.id,
-                title: title,
-                amount: amountDecimal,
-                date: date,
-                categoryId: categoryId,
-                providerId: providerId,
-                providerName: providerName.isEmpty ? "" : providerName,
-                comment: comment.isEmpty ? "" : comment
-            )
-        } else {
-            // Creating
-            savedBill = await viewModel.createBill(
-                title: title,
-                amount: amountDecimal,
-                date: date,
-                categoryId: categoryId,
-                providerId: providerId,
-                providerName: providerName.isEmpty ? "" : providerName,
-                comment: comment.isEmpty ? "" : comment
-            )
-        }
-        
-        if let savedBill = savedBill {
-            onSaved(savedBill)
-            dismiss()
-        }
     }
     
     // Create new provider
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         
-        if let _ = await providerViewModel.createProvider(name: providerToCreate) {
-            await viewModel.loadProviders()
-            
-            // Update bill once the provider is created and save
-            if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {
-                selectedProviderId = createdProvider.id
-                providerName = createdProvider.name
+        do {
+            if let _ = try await providerViewModel.createProvider(name: providerToCreate) {
+                await viewModel.loadProviders()
+                
+                // Update bill once the provider is created and save
+                if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {
+                    selectedProviderId = createdProvider.id
+                    providerName = createdProvider.name
+                }
+                await saveBill()
             }
-            await saveBill()
-        }
+        } catch {}
     }
 }
