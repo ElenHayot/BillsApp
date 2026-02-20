@@ -11,6 +11,7 @@ struct CategoryFormView: View {
     
     let category: Category? // nil = creating, non-nil = editing
     let onSaved: (Category) -> Void
+    let onSuccess: (String?) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = CategoryFormViewModel()
@@ -34,9 +35,10 @@ struct CategoryFormView: View {
         "#F39C12", "#1ABC9C", "#34495E", "#95A5A6"
     ]
     
-    init(category: Category? = nil, onSaved: @escaping (Category) -> Void) {
+    init(category: Category? = nil, onSaved: @escaping (Category) -> Void, onSuccess: @escaping (String?) -> Void) {
         self.category = category
         self.onSaved = onSaved
+        self.onSuccess = onSuccess
         
         _name = State(initialValue: category?.name ?? "")
         _selectedColor = State(initialValue: category != nil ? "\(category!.color)" : "")
@@ -70,13 +72,6 @@ struct CategoryFormView: View {
             .background(Color.systemGroupedBackground)
         }
         .padding()
-        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
-        }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
@@ -313,6 +308,10 @@ struct CategoryFormView: View {
             
             if let savedCategory = savedCategory {
                 onSaved(savedCategory)
+                if let message = viewModel.successMessage {
+                    onSuccess(message)
+                    viewModel.successMessage = nil
+                }
                 dismiss()
             }
         } catch {}

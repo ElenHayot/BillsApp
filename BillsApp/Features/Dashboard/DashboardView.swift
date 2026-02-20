@@ -20,6 +20,8 @@ struct DashboardView: View {
     @State private var capturedImage: UIImage?
     #endif
     @State private var showScanProcessing = false
+    @State private var showToast = false
+    @State private var toastMessage: String = ""
     
     enum DisplayMode {
         case pie
@@ -133,12 +135,17 @@ struct DashboardView: View {
             }
             // Sheet for image treatment
             .sheet(item: $capturedImage) { image in
-                ScanProcessingView(image: image) {
-                    // Callback after image treatment
-                    Task {
-                        await viewModel.loadDashboard(year: selectedYear)
+                ScanProcessingView (
+                    image: image,
+                    onSaved: {
+                        Task {
+                            await viewModel.loadDashboard(year: selectedYear)
+                        }
+                    },
+                    onSuccess: { message in
+                        showSuccessToast(message ?? "")
                     }
-                }
+                )
             }
             #endif
             .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
@@ -416,6 +423,23 @@ struct DashboardView: View {
             .shadow(color: Color.blue.opacity(0.3), radius: 20, x: 0, y: 8)
         }
         .buttonStyle(.plain)
+    }
+    
+    private func showSuccessToast(_ message: String) {
+        Task { @MainActor in
+            // Sleep to let last UI called close
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            toastMessage = message
+            withAnimation {
+                showToast = true
+            }
+            
+            // sleep instead of async call
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                showToast = false
+            }
+        }
     }
 }
 

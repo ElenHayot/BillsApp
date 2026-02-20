@@ -11,8 +11,9 @@ import SwiftUI
 struct BillDetailView: View {
 
     let bill: Bill
+    var onBillDeleted: ((Int) -> Void)?
     
-    @EnvironmentObject private var listViewModel: BillsListViewModel
+    @EnvironmentObject private var listViewModel: UnifiedBillsListViewModel
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel = BillDetailViewModel()
@@ -46,10 +47,13 @@ struct BillDetailView: View {
                             billId: bill.id
                         )
                         if success {
-                            print("✅ Suppression réussie, suppression locale pour bill \(bill.id)")
-                            // ✅ Supprime directement dans le viewModel
-                            listViewModel.bills.removeAll { $0.id == bill.id }
+                            onBillDeleted?(bill.id)
+                            dismiss()
                         }
+//                        if success {
+//                            print("✅ Suppression réussie, suppression locale pour bill \(bill.id)")
+//                            listViewModel.bills.removeAll { $0.id == bill.id }
+//                        }
                     } catch {}
                 }
             }

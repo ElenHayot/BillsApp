@@ -147,7 +147,7 @@ final class BillFormViewModel: ObservableObject {
             throw error
             
         } catch {
-            errorMessage = "Une erreur inattendue est survenue"
+//            errorMessage = "Une erreur inattendue est survenue"
             isSaving = false
             throw error
         }

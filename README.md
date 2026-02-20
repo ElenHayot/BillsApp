@@ -1,11 +1,15 @@
-BillsApp project -
+📊 Suivre tes dépenses annuelles simplement
 
-Create, update and delete your invoices as you want Create, update and delete categories to group your bills Create, update and delete providers
+Cette application mobile t’aide à garder une vision claire de tes dépenses sur l’année.
 
-Get your invoices' statistics grouped by categories Get all your invoices per year
+Ton dashboard affiche automatiquement un graphique en camembert, avec les montants totaux classés par catégories et par fournisseurs. En un coup d’œil, tu comprends où part ton budget.
 
-FINAL GOAL : 
-Take a photo of your invoice, it will automatically fill fields to create a new invoice 
-Then, you can find your invoice with its title, its category, its provider, its amount or its date 
-You can change values or delete your invoice wherever you want You also can create an invoice manually 
-Finally, on your dashboard, you can find your invoices' statistics for the current year, grouped by category or provider
+Ajouter une facture est très simple :
+
+Tu prends une photo
+
+L’OCR détecte automatiquement le montant TTC et le fournisseur
+
+Tu valides… et la facture est enregistrée en base
+
+L’objectif : te faire gagner du temps tout en te donnant une vision claire et structurée de tes dépenses.

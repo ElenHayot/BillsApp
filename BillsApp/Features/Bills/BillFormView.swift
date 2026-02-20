@@ -13,6 +13,7 @@ struct BillFormView: View {
     let bill: Bill? // nil = creating, non-nil = editing
     let defaultCategoryId: Int?
     let onSaved: (Bill) -> Void
+    let onSuccess: (String) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = BillFormViewModel()
@@ -27,6 +28,7 @@ struct BillFormView: View {
     
     @State private var showProviderAlert = false    // to create new provider
     @State private var providerToCreate: String = ""
+    @State private var showToast = false
     
     @FocusState private var focusedField: Field?    // IOS focus
     
@@ -34,10 +36,11 @@ struct BillFormView: View {
         case title, amount, providerName, comment
     }
     
-    init(bill: Bill? = nil, defaultCategoryId: Int? = nil, onSaved: @escaping (Bill) -> Void) {
+    init(bill: Bill? = nil, defaultCategoryId: Int? = nil, onSaved: @escaping (Bill) -> Void, onSuccess: @escaping (String) -> Void = { _ in }) {
         self.bill = bill
         self.defaultCategoryId = defaultCategoryId
         self.onSaved = onSaved
+        self.onSuccess = onSuccess
         
         _title = State(initialValue: bill?.title ?? "")
         _amount = State(initialValue: bill != nil ? "\(bill!.amount)" : "")
@@ -94,15 +97,9 @@ struct BillFormView: View {
         } message: {
             Text("Le fournisseur \"\(providerToCreate)\" n'existe pas. Souhaitez-vous le créer ?")
         }
-        .alert("Success", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
-        }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
+                print("BillFormView: Error")
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -376,10 +373,10 @@ struct BillFormView: View {
         }
         
         // Edit providerId if existing provider found
-        if selectedProviderId == nil {
+        if selectedProviderId == nil && providerName != "" {
             selectedProviderId = await detecteProviderId(name: providerName)
         }
-        
+
         // Check if create a provider is needed
         if shouldCreateProvider() {
             providerToCreate = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -387,8 +384,7 @@ struct BillFormView: View {
             return
         }
         
-        let providerId = selectedProviderId as Int?
-        
+        let providerId = selectedProviderId as Int?        
         let savedBill: Bill?
         
         do {
@@ -419,6 +415,10 @@ struct BillFormView: View {
             
             if let savedBill = savedBill {
                 onSaved(savedBill)
+                if let message = viewModel.successMessage {
+                    onSuccess(message)
+                    viewModel.successMessage = nil
+                }
                 dismiss()
             }
         } catch {}
@@ -487,7 +487,6 @@ struct BillFormView: View {
             
             if let savedBill = savedBill {
                 onSaved(savedBill)
-                dismiss()
             }
         } catch {}
         

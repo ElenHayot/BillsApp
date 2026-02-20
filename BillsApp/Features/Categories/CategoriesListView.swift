@@ -15,6 +15,8 @@ struct CategoriesListView: View {
     @State private var categoryToDelete: Category?
     @State private var showDeleteConfirmation = false
     @State var year: Int
+    @State var showToast: Bool = false
+    @State var toastMessage: String = ""
     
     init(year: Int) {
         self.year = year
@@ -36,23 +38,48 @@ struct CategoriesListView: View {
                 }
             }
             .background(Color.systemGroupedBackground)
+            
+            if showToast {
+                VStack {
+                    Text(toastMessage)
+                        .padding()
+                        .background(Color.green.opacity(0.9))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                        .padding(.top, 50)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(999)  // ← Assure it's over all
+            }
         }
         .task {
             await viewModel.loadCategories()
         }
         .sheet(isPresented: $showCreateForm) {
-            CategoryFormView() { newCategory in
-                viewModel.categories.append(newCategory)
-            }
+            CategoryFormView(
+                onSaved: {newCategory in
+                    viewModel.categories.append(newCategory)
+                },
+                onSuccess: { _message in
+                    showSuccessToast(_message ?? "")
+                }
+            )
         }
         .sheet(item: $categoryToEdit) { category in
             CategoryFormView(
-                category: category
-            ) { updatedCategory in
-                if let index = viewModel.categories.firstIndex(where: { $0.id == updatedCategory.id }) {
-                    viewModel.categories[index] = updatedCategory
+                category: category,
+                onSaved: {
+                    updatedCategory in
+                        if let index = viewModel.categories.firstIndex(where: { $0.id == updatedCategory.id }) {
+                            viewModel.categories[index] = updatedCategory
+                        }
+                },
+                onSuccess: { message in
+                    showSuccessToast(message ?? "")
                 }
-            }
+            )
         }
         .alert("Supprimer cette catégorie ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
@@ -69,13 +96,6 @@ struct CategoriesListView: View {
             if let category = categoryToDelete {
                 Text("Êtes-vous sûr de vouloir supprimer la catégorie '\(category.name)'? Cette action est irrévocable.")
             }
-        }
-        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -208,5 +228,23 @@ struct CategoriesListView: View {
             )
             categoryToDelete = nil
         } catch {}
+    }
+    
+    /// Show toast on success message received
+    private func showSuccessToast(_ message: String) {
+        Task { @MainActor in
+            // Sleep to let last UI called close
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            toastMessage = message
+            withAnimation {
+                showToast = true
+            }
+            
+            // sleep instead of async call
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                showToast = false
+            }
+        }
     }
 }

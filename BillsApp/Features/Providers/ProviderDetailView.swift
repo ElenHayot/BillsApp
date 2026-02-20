@@ -11,12 +11,18 @@ import SwiftUI
 struct ProviderDetailView: View {
 
     let provider: Provider
+    let onSuccess: (String) -> Void
     
     @EnvironmentObject private var listViewModel: ProvidersListViewModel
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel = ProviderDetailViewModel()
     @State private var showDeleteConfirmation = false
+    
+    init(provider: Provider, onSuccess: @escaping (String) -> Void = { _ in }) {
+        self.provider = provider
+        self.onSuccess = onSuccess
+    }
 
     var body: some View {
         ZStack {
@@ -45,8 +51,11 @@ struct ProviderDetailView: View {
                         providerId: provider.id
                     )
                     if success {
-                        print("✅ Suppression réussie, suppression locale pour provider \(provider.id)")
                         listViewModel.providers.removeAll { $0.id == provider.id }
+                        if let message = viewModel.successMessage {
+                            onSuccess(message)
+                            viewModel.successMessage = nil
+                        }
                         dismiss()
                     } else {
                         print("❌ Échec de la suppression")
@@ -54,13 +63,6 @@ struct ProviderDetailView: View {
                 }
             }
             Button("Annuler", role: .cancel) {}
-        }
-        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {

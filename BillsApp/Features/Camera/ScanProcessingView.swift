@@ -14,6 +14,7 @@ import UIKit
 struct ScanProcessingView: View {
     let image: UIImage
     let onSaved: () -> Void
+    let onSuccess: (String?) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = BillFormViewModel()
@@ -711,21 +712,25 @@ struct ScanProcessingView: View {
             showProviderAlert = true
             return
         }
-        
-        let savedBill = await viewModel.createBill(
-            title: title,
-            amount: amountDecimal,
-            date: date,
-            categoryId: categoryId,
-            providerId: selectedProviderId,
-            providerName: providerName.isEmpty ? "" : providerName,
-            comment: comment.isEmpty ? "" : comment
-        )
-        
-        if savedBill != nil {
-            onSaved()
-            dismiss()
-        }
+        do {
+            let savedBill = try await viewModel.createBill(
+                title: title,
+                amount: amountDecimal,
+                date: date,
+                categoryId: categoryId,
+                providerId: selectedProviderId,
+                providerName: providerName.isEmpty ? "" : providerName,
+                comment: comment.isEmpty ? "" : comment
+            )
+            
+            if let savedBill = savedBill {
+                onSaved()
+                if let message = viewModel.successMessage {
+                    onSuccess(message)
+                    dismiss()
+                }
+            }
+        } catch {}
     }
     
     // Search an existing provider filtering on the given name
@@ -759,35 +764,43 @@ struct ScanProcessingView: View {
         
         let providerId: Int? = nil
         
-        let savedBill = await viewModel.createBill(
-            title: title,
-            amount: amountDecimal,
-            date: date,
-            categoryId: categoryId,
-            providerId: providerId,
-            providerName: providerName.isEmpty ? "" : providerName,
-            comment: comment.isEmpty ? "" : comment
-        )
-        
-        if savedBill != nil {
-            onSaved()
-            dismiss()
-        }
+        do {
+            let savedBill = try await viewModel.createBill(
+                title: title,
+                amount: amountDecimal,
+                date: date,
+                categoryId: categoryId,
+                providerId: providerId,
+                providerName: providerName.isEmpty ? "" : providerName,
+                comment: comment.isEmpty ? "" : comment
+            )
+            
+            if savedBill != nil {
+                onSaved()
+                if let message = viewModel.successMessage {
+                    onSuccess(message)
+                    dismiss()
+                }
+            }
+        } catch {}
     }
     
     private func createNewProvider() async {
         let providerViewModel = ProviderFormViewModel()
         
-        if let _ = await providerViewModel.createProvider(name: providerToCreate) {
-            await viewModel.loadProviders()
-            
-            if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {
-                selectedProviderId = createdProvider.id
-                providerName = createdProvider.name
+        do {
+            if let _ = try await providerViewModel.createProvider(name: providerToCreate) {
+                await viewModel.loadProviders()
+                
+                if let createdProvider = viewModel.providers.first(where: { $0.name.lowercased() == providerToCreate.lowercased() }) {
+                    selectedProviderId = createdProvider.id
+                    providerName = createdProvider.name
+                }
+                
+                
+                await saveBill()
             }
-            
-            await saveBill()
-        }
+        } catch {}
     }
 }
 #endif

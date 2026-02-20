@@ -24,7 +24,7 @@ struct MainNavigationView: View {
                 }
             }
             .navigationDestination(for: DashboardCategoryStats.self) { category in
-                BillsListView(
+                UnifiedBillsListView(
                     categoryId: category.categoryId,
                     categoryName: category.categoryName,
                     categoryColor: category.categoryColor,
@@ -38,22 +38,15 @@ struct MainNavigationView: View {
             }
             .navigationDestination(for: NavigationDestination.self) { destination in
                 Group {
-//                    if destination == "categories" {
-//                        CategoriesListView()
-//                    } else if destination == "all-bills" {
-//                        AllBillsListView(year: Calendar.current.component(.year, from: Date()))
-//                    } else if destination == "providers" {
-//                        ProvidersListView()
-//                    }
                     switch destination {
                         case .categories(let year):
                             CategoriesListView(year: year)
                         case .allBills(let year):
-                            AllBillsListView(year: year)
+                            UnifiedBillsListView(year: year)
                         case .providers(let year):
                             ProvidersListView(year: year)
                         case .category(let categoryStats, let year):
-                            BillsListView(
+                            UnifiedBillsListView(
                                 categoryId: categoryStats.categoryId,
                                 categoryName: categoryStats.categoryName,
                                 categoryColor: categoryStats.categoryColor,

@@ -18,6 +18,8 @@ struct ProvidersListView: View {
     @State private var providerToDelete: Provider?
     @State private var showDeleteConfirmation = false
     @State var year: Int
+    @State var showToast: Bool = false
+    @State var toastMessage: String = ""
     
     init(year: Int) {
         self.year = year
@@ -39,6 +41,21 @@ struct ProvidersListView: View {
                 }
             }
             .background(Color.systemGroupedBackground)
+            
+            if showToast {
+                VStack {
+                    Text(toastMessage)
+                        .padding()
+                        .background(Color.green.opacity(0.9))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                        .padding(.top, 50)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(999)  // ← Assure it's over all
+            }
         }
         .task {
             await viewModel.loadProviders()
@@ -48,14 +65,26 @@ struct ProvidersListView: View {
                 .environmentObject(viewModel)
         }
         .sheet(isPresented: $showCreateForm) {
-            ProviderFormView() { newProvider in
-                handleProviderCreated(newProvider)
-            }
+            ProviderFormView(
+                onSaved: {
+                    newProvider in
+                        handleProviderCreated(newProvider)
+                },
+                onSuccess: { message in
+                    showSuccessToast(message ?? "")
+                }
+            )
         }
         .sheet(item: $providerToEdit) { provider in
-            ProviderFormView(provider: provider) { updatedProvider in
-                handleProviderUpdated(updatedProvider)
-            }
+            ProviderFormView(
+                provider: provider,
+                onSaved: { updatedProvider in
+                    handleProviderUpdated(updatedProvider)
+                },
+                onSuccess: { message in
+                    showSuccessToast(message ?? "")
+                }
+            )
         }
         .alert("Supprimer ce fournisseur ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
@@ -72,13 +101,6 @@ struct ProvidersListView: View {
             if let provider = providerToDelete {
                 Text("Es-tu sûr de vouloir supprimer le fournisseur '\(provider.name)' ?")
             }
-        }
-        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -224,5 +246,23 @@ struct ProvidersListView: View {
             try await viewModel.deleteProvider(providerId: provider.id)
             providerToDelete = nil
         } catch {}
+    }
+    
+    /// Show toast on success message received
+    private func showSuccessToast(_ message: String) {
+        Task { @MainActor in
+            // Sleep to let last UI called close
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            toastMessage = message
+            withAnimation {
+                showToast = true
+            }
+            
+            // sleep instead of async call
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                showToast = false
+            }
+        }
     }
 }

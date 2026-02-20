@@ -1,46 +1,74 @@
 //
-//  AllBillsListView.swift
+//  UnifiedBillsListView.swift
 //  BillsApp
 //
-//  Created by Elen Hayot on 08/01/2026.
+//  Created by Elen Hayot on 13/02/2026.
 //
 
 import SwiftUI
 
-struct AllBillsListView: View {
+struct UnifiedBillsListView: View {
     
+    // MARK: - Parameters (optionals in "all-bills" view)
+    let categoryId: Int?
+    let categoryName: String?
+    let categoryColor: String?
+    
+    // MARK: - Common states
     @State private var selectedYear: Int
-    @State private var selectedCategoryId: Int?
+    @State private var selectedCategoryId: Int? // category filter (for all-bills view)
     @State private var minAmount: String = ""
     @State private var maxAmount: String = ""
     @State private var showFilters = false
     
-    @StateObject private var viewModel = AllBillsListViewModel()
+    @StateObject private var viewModel = UnifiedBillsListViewModel()
     @State private var showCreateForm = false
     @State private var billToEdit: Bill?
     @State private var billToDelete: Bill?
     @State private var showDeleteConfirmation = false
+    @State private var showToast = false
+    @State private var toastMessage: String = ""
     
+    // MARK: - Computed Properties to manage both modes
+    
+    /// Determinate if its "all-bills" mode
+    private var isAllBillsView: Bool {
+        categoryId == nil
+    }
+    
+    /// Title displayed in header
+    private var displayTitle: String {
+        isAllBillsView ? "Toutes les factures" : (categoryName ?? "")
+    }
+    
+    /// Color to use for display
+    private var displayColor: String {
+        if isAllBillsView {
+            return "#999999" // Default color
+        }
+        return categoryColor ?? "#999999"
+    }
+    
+    /// Available picker years
     private var availableYears: [Int] {
         let currentYear = Calendar.current.component(.year, from: Date())
         return Array((currentYear - 9)...currentYear).reversed()
     }
     
-    // Filtered bills
+    /// Filtered invoices accorded to active mode and filters
     private var filteredBills: [BillWithCategory] {
         var bills = viewModel.bills
         
-        // Filtered by category
-        if let categoryId = selectedCategoryId {
-            bills = bills.filter { $0.bill.categoryId == categoryId }
+        // FILTER BY CATEGORY (only available in "all-bills" view mode)
+        if isAllBillsView, let filterCategoryId = selectedCategoryId {
+            bills = bills.filter { $0.bill.categoryId == filterCategoryId }
         }
         
-        // Filtered by min amount
+        // FILTER BY AMOUNT
         if let minDecimal = Decimal(string: minAmount), !minAmount.isEmpty {
             bills = bills.filter { $0.bill.amount >= minDecimal }
         }
         
-        // Filtered by max amount
         if let maxDecimal = Decimal(string: maxAmount), !maxAmount.isEmpty {
             bills = bills.filter { $0.bill.amount <= maxDecimal }
         }
@@ -48,16 +76,30 @@ struct AllBillsListView: View {
         return bills
     }
     
-    // Number of active filters
+    /// Number of activated filters
     private var activeFiltersCount: Int {
         var count = 0
-        if selectedCategoryId != nil { count += 1 }
+        if !isAllBillsView && selectedCategoryId != nil { count += 1 }
         if !minAmount.isEmpty { count += 1 }
         if !maxAmount.isEmpty { count += 1 }
         return count
     }
     
+    // MARK: - Initializers
+    
+    /// Initialize "all-bills" view
     init(year: Int) {
+        self.categoryId = nil
+        self.categoryName = nil
+        self.categoryColor = nil
+        _selectedYear = State(initialValue: year)
+    }
+    
+    /// Initialize "bills-by-category" view
+    init(categoryId: Int, categoryName: String, categoryColor: String, year: Int) {
+        self.categoryId = categoryId
+        self.categoryName = categoryName
+        self.categoryColor = categoryColor
         _selectedYear = State(initialValue: year)
     }
 
@@ -81,33 +123,54 @@ struct AllBillsListView: View {
                 }
             }
             .background(Color.systemGroupedBackground)
+            
+            if showToast {
+                VStack {
+                    Text(toastMessage)
+                        .padding()
+                        .background(Color.green.opacity(0.9))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                        .padding(.top, 50)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(999)  // ← Assure it's over all
+            }
         }
         .task {
-            await viewModel.loadBills(year: selectedYear)
+            await loadBills()
         }
-        .onChange(of: selectedYear) { oldYear, newYear in
-            print("📅 Année changée (All Bills): \(oldYear) → \(newYear)")
-            Task {
-                await viewModel.loadBills(year: newYear)
-            }
+        .task(id: selectedYear) {
+            await loadBills()
         }
         .navigationDestination(for: Bill.self) { bill in
-            BillDetailView(bill: bill)
-                .environmentObject(viewModel)
+            BillDetailView(bill: bill) { deletedBillId in
+                viewModel.bills.removeAll { $0.id == deletedBillId }
+            }
         }
         .sheet(isPresented: $showCreateForm) {
-            BillFormView() { newBill in
-                let categoryColor = viewModel.categoryColor(for: newBill.categoryId)
-                viewModel.bills.append(BillWithCategory(bill: newBill, categoryColor: categoryColor))
-            }
+            BillFormView(
+                defaultCategoryId: categoryId,
+                onSaved: { updatedBill in
+                    handleBillCreated(updatedBill)
+                },
+                onSuccess: { message in
+                    showSuccessToast(message)
+                }
+            )
         }
         .sheet(item: $billToEdit) { bill in
-            BillFormView(bill: bill) { updatedBill in
-                if let index = viewModel.bills.firstIndex(where: { $0.id == updatedBill.id }) {
-                    let categoryColor = viewModel.categoryColor(for: updatedBill.categoryId)
-                    viewModel.bills[index] = BillWithCategory(bill: updatedBill, categoryColor: categoryColor)
+            BillFormView(
+                bill: bill,
+                onSaved: { updatedBill in
+                    handleBillUpdated(updatedBill)
+                },
+                onSuccess: { message in
+                    showSuccessToast(message)
                 }
-            }
+            )
         }
         .alert("Supprimer cette facture ?", isPresented: $showDeleteConfirmation) {
             Button("Supprimer", role: .destructive) {
@@ -125,15 +188,9 @@ struct AllBillsListView: View {
                 Text("Es-tu sûr de vouloir supprimer la facture '\(bill.title)'?")
             }
         }
-        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
-        }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
+                print("UnifiedBillsListView: Error")
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -147,11 +204,22 @@ struct AllBillsListView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Toutes les factures")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                    // TITLE : with or without colored circle accortdint to the mode
+                    HStack(spacing: 8) {
+                        if !isAllBillsView {
+                            // Category mode : colored circle
+                            Circle()
+                                .fill(Color(hex: displayColor))
+                                .frame(width: 16, height: 16)
+                        }
+                        
+                        Text(displayTitle)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                    }
                     
+                    // YEAR PICKER
                     HStack(spacing: 12) {
                         Text("Année")
                             .font(.subheadline)
@@ -170,6 +238,7 @@ struct AllBillsListView: View {
                 
                 Spacer()
                 
+                // ACTION BUTTON
                 HStack(spacing: 12) {
                     // Filter button
                     Button {
@@ -191,7 +260,7 @@ struct AllBillsListView: View {
                     }
                     .buttonStyle(.plain)
                     
-                    // Create button
+                    // Creating button
                     Button {
                         showCreateForm = true
                     } label: {
@@ -224,9 +293,7 @@ struct AllBillsListView: View {
                 
                 if activeFiltersCount > 0 {
                     Button {
-                        selectedCategoryId = nil
-                        minAmount = ""
-                        maxAmount = ""
+                        resetFilters()
                     } label: {
                         Text("Réinitialiser")
                             .font(.caption)
@@ -237,34 +304,36 @@ struct AllBillsListView: View {
             }
             
             VStack(spacing: 16) {
-                // Filtered by category
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Catégorie")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    if viewModel.categories.isEmpty {
-                        Text("Chargement des catégories...")
+                // FILTER BY CATEGORY (only for all-bills view)
+                if isAllBillsView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Catégorie")
+                            .font(.subheadline)
                             .foregroundColor(.secondary)
-                            .font(.caption)
-                    } else {
-                        Picker("Catégorie", selection: $selectedCategoryId) {
-                            Text("Toutes les catégories").tag(nil as Int?)
-                            ForEach(viewModel.categories) { category in
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color(hex: category.color))
-                                        .frame(width: 12, height: 12)
-                                    Text(category.name)
+                        
+                        if viewModel.categories.isEmpty {
+                            Text("Chargement des catégories...")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                        } else {
+                            Picker("Catégorie", selection: $selectedCategoryId) {
+                                Text("Toutes les catégories").tag(nil as Int?)
+                                ForEach(viewModel.categories) { category in
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color(hex: category.color))
+                                            .frame(width: 12, height: 12)
+                                        Text(category.name)
+                                    }
+                                    .tag(category.id as Int?)
                                 }
-                                .tag(category.id as Int?)
                             }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
                     }
                 }
                 
-                // Filtered by amount
+                // FILTER ON AMOUNT
                 #if os(iOS)
                 VStack(spacing: 16) {
                     amountFilterField(title: "Montant min", text: $minAmount)
@@ -285,6 +354,8 @@ struct AllBillsListView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         .transition(.move(edge: .top).combined(with: .opacity))
     }
+    
+    // MARK: - Content View
     
     @ViewBuilder
     private var contentView: some View {
@@ -309,7 +380,7 @@ struct AllBillsListView: View {
                     .foregroundColor(.red)
                     .multilineTextAlignment(.center)
                 Button("Réessayer") {
-                    Task { await viewModel.loadBills(year: selectedYear) }
+                    Task { await loadBills() }
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -318,6 +389,7 @@ struct AllBillsListView: View {
         }
         else if viewModel.bills.isEmpty {
             if activeFiltersCount > 0 {
+                // If no result with current filters
                 VStack(spacing: 16) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 48))
@@ -330,15 +402,14 @@ struct AllBillsListView: View {
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                     Button("Réinitialiser les filtres") {
-                        selectedCategoryId = nil
-                        minAmount = ""
-                        maxAmount = ""
+                        resetFilters()
                     }
                     .buttonStyle(.borderedProminent)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 60)
             } else {
+                // If no bill at all
                 VStack(spacing: 16) {
                     Image(systemName: "doc.text")
                         .font(.system(size: 48))
@@ -346,7 +417,7 @@ struct AllBillsListView: View {
                     Text("Aucune facture")
                         .font(.headline)
                         .foregroundColor(.primary)
-                    Text("Tu n'as pas encore de facture enregistrée pour \(selectedYear).")
+                    Text(emptyStateMessage)
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -360,17 +431,18 @@ struct AllBillsListView: View {
             }
         }
         else {
+            // All bills list
             VStack(spacing: 0) {
-                ForEach(filteredBills) { bill in
-                    NavigationLink(value: bill.bill) {
+                ForEach(filteredBills) { billWithCategory in
+                    NavigationLink(value: billWithCategory.bill) {
                         BillRowView(
-                            bill: bill.bill,
-                            categoryColor: bill.categoryColor ?? "#999999",
+                            bill: billWithCategory.bill,
+                            categoryColor: billWithCategory.categoryColor ?? "#999999",
                             onEdit: {
-                                billToEdit = bill.bill
+                                billToEdit = billWithCategory.bill
                             },
                             onDelete: {
-                                billToDelete = bill.bill
+                                billToDelete = billWithCategory.bill
                                 showDeleteConfirmation = true
                             }
                         )
@@ -378,7 +450,7 @@ struct AllBillsListView: View {
                     .buttonStyle(.plain)
                     .padding(.vertical, 4)
                     
-                    if bill.bill.id != filteredBills.last?.bill.id {
+                    if billWithCategory.bill.id != filteredBills.last?.bill.id {
                         Divider()
                             .padding(.leading, 16)
                     }
@@ -391,16 +463,93 @@ struct AllBillsListView: View {
         }
     }
     
+    // MARK: - Helper Methods
     
-    // MARK: - helpers
+    /// State message personnalized according to active mode
+    private var emptyStateMessage: String {
+        if isAllBillsView {
+            return "Tu n'as pas encore de facture enregistrée pour \(selectedYear)."
+        } else {
+            return "Tu n'as encore aucune facture dans \(categoryName ?? "cette catégorie") pour \(selectedYear)."
+        }
+    }
     
+    /// Reinitialize all filters
+    private func resetFilters() {
+        selectedCategoryId = nil
+        minAmount = ""
+        maxAmount = ""
+    }
+    
+    /// Load active mode bills
+    private func loadBills() async {
+        if isAllBillsView {
+            // Mode "all-bills" : load all bills without filtering
+            await viewModel.loadAllBills(year: selectedYear)
+        } else {
+            // Mode "bill-by-category" : load all bills of one specific category
+            await viewModel.loadCategoryBills(categoryId: categoryId!, year: selectedYear)
+        }
+    }
+    
+    /// Manage new bill creation
+    private func handleBillCreated(_ newBill: Bill) {
+        if isAllBillsView {
+            // Mode "all-bills"
+            let categoryColor = viewModel.categoryColor(for: newBill.categoryId)
+            viewModel.bills.append(BillWithCategory(bill: newBill, categoryColor: categoryColor))
+        } else {
+            // Mode "bill-by-category" : check if its the same category
+            if newBill.categoryId == categoryId {
+                // Same category
+                viewModel.bills.append(BillWithCategory(bill: newBill, categoryColor: categoryColor))
+            } else {
+                // Different category => reload data
+                Task {
+                    await loadBills()
+                }
+            }
+        }
+    }
+    
+    /// Manage bill update
+    private func handleBillUpdated(_ updatedBill: Bill) {
+        if isAllBillsView {
+            // Mode "all-bills"
+            if let index = viewModel.bills.firstIndex(where: { $0.id == updatedBill.id }) {
+                let categoryColor = viewModel.categoryColor(for: updatedBill.categoryId)
+                viewModel.bills[index] = BillWithCategory(bill: updatedBill, categoryColor: categoryColor)
+            }
+        } else {
+            // Mode "bill-by-category"
+            if updatedBill.categoryId == categoryId {
+                // If same category
+                if let index = viewModel.bills.firstIndex(where: { $0.id == updatedBill.id }) {
+                    viewModel.bills[index] = BillWithCategory(bill: updatedBill, categoryColor: categoryColor)
+                }
+            } else {
+                // If category changed => reload data
+                Task {
+                    await loadBills()
+                }
+            }
+        }
+    }
+    
+    /// Delete a bill
     private func deleteBill(_ bill: Bill) async {
         do {
             try await viewModel.deleteBill(billId: bill.id)
             billToDelete = nil
+            
+            if let message = viewModel.successMessage{
+                showSuccessToast(message)
+                viewModel.successMessage = nil
+            }
         } catch {}
     }
     
+    /// Filter on amount
     private func amountFilterField(title: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -416,4 +565,36 @@ struct AllBillsListView: View {
                 #endif
         }
     }
+    
+    /// Show toast on success message received
+    private func showSuccessToast(_ message: String) {
+        Task { @MainActor in
+            // Sleep to let last UI called close
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            toastMessage = message
+            withAnimation {
+                showToast = true
+            }
+            
+            // sleep instead of async call
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                showToast = false
+            }
+        }
+    }
+    
+    //    private func showSuccessToast(_ message: String) {
+    //        toastMessage = message
+    //        withAnimation {
+    //            showToast = true
+    //        }
+    //
+    //        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+    //            withAnimation {
+    //                showToast = false
+    //            }
+    //        }
+    //    }
+
 }

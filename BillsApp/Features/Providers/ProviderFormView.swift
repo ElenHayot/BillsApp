@@ -12,6 +12,7 @@ struct ProviderFormView: View {
     
     let provider: Provider? // nil = creating, non-nil = editing
     let onSaved: (Provider) -> Void
+    let onSuccess: (String?) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ProviderFormViewModel()
@@ -23,9 +24,10 @@ struct ProviderFormView: View {
         case name
     }
     
-    init(provider: Provider? = nil, onSaved: @escaping (Provider) -> Void) {
+    init(provider: Provider? = nil, onSaved: @escaping (Provider) -> Void, onSuccess: @escaping (String?) -> Void) {
         self.provider = provider
         self.onSaved = onSaved
+        self.onSuccess = onSuccess
         
         _name = State(initialValue: provider?.name ?? "")
     }
@@ -58,13 +60,6 @@ struct ProviderFormView: View {
             #if os(iOS)
             .background(Color(UIColor.systemGroupedBackground))
             #endif
-        }
-        .alert("Succès", isPresented: .constant(viewModel.successMessage != nil)) {
-            Button("OK") {
-                viewModel.successMessage = nil
-            }
-        } message: {
-            Text(viewModel.successMessage ?? "")
         }
         .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -235,6 +230,10 @@ struct ProviderFormView: View {
             
             if let savedProvider = savedProvider {
                 onSaved(savedProvider)
+                if let successMessage = viewModel.successMessage {
+                    onSuccess(successMessage)
+                    viewModel.successMessage = nil
+                }
                 dismiss()
             }
         } catch {}
