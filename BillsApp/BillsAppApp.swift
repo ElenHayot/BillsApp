@@ -3,6 +3,7 @@
 //  BillsApp
 //
 //  Created by Elen Hayot on 29/12/2025.
+//  Copyright © 2026 Elen Hayot. All rights reserved.
 //
 
 import SwiftUI
