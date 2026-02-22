@@ -11,6 +11,7 @@ import Combine
 
 @MainActor
 class AuthViewModel: ObservableObject {
+    @Published var isCheckingAuth = false
     @Published var isAuthenticated = false
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -19,15 +20,25 @@ class AuthViewModel: ObservableObject {
     @Published var tokenType: String?
     
     init() {
+        isCheckingAuth = true
         Task {
             // Check if refresh token exists when launching app
-            await checkAuthenticationState()
+            async let authTask: () = await checkAuthenticationState()
+            // time to display SplahScreen not to have the "pop-up effect"
+            async let timerTask: () = Task.sleep(for: .seconds(1.2))
+                    
+            // Waiting for the two tasks being achieved
+            _ = try await (authTask, timerTask)
+            await MainActor.run { isCheckingAuth = false }
         }
     }
     
     // MARK: - Check Authentication State
     /// Check if user already connected when launching app
     private func checkAuthenticationState() async {
+        print("Checking authentication state...")
+        print("Access token: \(AuthStorage.shared.accessToken ?? "nil")")
+        print("Refresh token: \(KeychainManager.shared.getRefreshToken() ?? "nil")")
         if let token = AuthStorage.shared.accessToken,
            KeychainManager.shared.getRefreshToken() != nil {
             accessToken = token
@@ -42,7 +53,9 @@ class AuthViewModel: ObservableObject {
     /// Try to get new access token with current refresh token
     private func attemptTokenRefresh() async {
         do {
-            let _ = try await APIClient.shared.refreshAccessToken()
+            if try await APIClient.shared.refreshAccessToken() != "" {
+                isAuthenticated = true
+            }
         } catch {
             logout()
         }

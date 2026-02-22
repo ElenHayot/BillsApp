@@ -35,127 +35,126 @@ struct DashboardView: View {
     }
 
     var body: some View {
-            ZStack(alignment: .bottom) {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        if viewModel.isLoading {
-                            VStack(spacing: 16) {
-                                ProgressView()
-                                    .scaleEffect(1.2)
-                                Text("Chargement du dashboard...")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(.top, 100)
+        ZStack(alignment: .bottom) {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    if viewModel.isLoading {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            Text("Chargement du dashboard...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
-                        else if let error = viewModel.errorMessage {
-                            VStack(spacing: 16) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.orange)
-                                Text(error)
-                                    .font(.body)
-                                    .foregroundColor(.red)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(.top, 100)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.top, 100)
+                    }
+                    else if let error = viewModel.errorMessage {
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 48))
+                                .foregroundColor(.orange)
+                            Text(error)
+                                .font(.body)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                         }
-                        else if let dashboard = viewModel.dashboard {
-                            VStack(spacing: 24) {
-                                // Header Card
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.top, 100)
+                    }
+                    else if let dashboard = viewModel.dashboard {
+                        VStack(spacing: 24) {
+                            // Header Card
 //                                headerCard
 //                                    .padding(.horizontal)
-                                
-                                // Stats Overview
-                                statsOverview(dashboard: dashboard)
-                                    .padding(.horizontal)
-                                
-                                // Chart Section
-                                chartSection
-                                    .padding(.horizontal)
-                                
-                                // Quick Actions
-                                quickActions
-                                    .padding(.horizontal)
-                                
-                                // Padding to avoid the floating button to hide the content
-                                Color.clear
-                                    .frame(height: 100)
-                            }
-                            .padding(.top, 8)
+                            
+                            // Stats Overview
+                            statsOverview(dashboard: dashboard)
+                                .padding(.horizontal)
+                            
+                            // Chart Section
+                            chartSection
+                                .padding(.horizontal)
+                            
+                            // Quick Actions
+                            quickActions
+                                .padding(.horizontal)
+                            
+                            // Padding to avoid the floating button to hide the content
+                            Color.clear
+                                .frame(height: 100)
                         }
-                        else {
-                            VStack(spacing: 16) {
-                                Image(systemName: "doc.text")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.secondary)
-                                Text("Pas de données")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(.top, 100)
+                        .padding(.top, 8)
+                    }
+                    else {
+                        VStack(spacing: 16) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 48))
+                                .foregroundColor(.secondary)
+                            Text("Pas de données")
+                                .font(.body)
+                                .foregroundColor(.secondary)
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.top, 100)
                     }
                 }
-                .background(Color.systemGroupedBackground)
-                
-                #if os(iOS)
-                // Floating scan button
-                VStack {
-                    Spacer()
-                    floatingScanButton
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 34) // Safe area bottom + padding
-                }
-                #endif
             }
-            .task {
-                await viewModel.loadDashboard(year: selectedYear)
+            .background(Color.systemGroupedBackground)
+            
+            #if os(iOS)
+            // Floating scan button
+            VStack {
+                Spacer()
+                floatingScanButton
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34) // Safe area bottom + padding
             }
-            .onChange(of: selectedYear) { oldYear, newYear in
+            #endif
+        }
+        .task {
+            await viewModel.loadDashboard(year: selectedYear)
+        }
+        .onChange(of: selectedYear) { oldYear, newYear in
+            Task {
+                await viewModel.loadDashboard(year: newYear)
+            }
+        }
+        .onChange(of: navigationPath) { oldPath, newPath in
+            if oldPath.count > 0 && newPath.isEmpty {
                 Task {
-                    await viewModel.loadDashboard(year: newYear)
+                    await viewModel.loadDashboard(year: selectedYear)
                 }
             }
-            .onChange(of: navigationPath) { oldPath, newPath in
-                if oldPath.count > 0 && newPath.isEmpty {
+        }
+        #if os(iOS)
+        // Sheet for camera
+        .sheet(isPresented: $showCamera) {
+            ImagePicker(image: $capturedImage, sourceType: .camera)
+        }
+        // Sheet for image treatment
+        .sheet(item: $capturedImage) { image in
+            ScanProcessingView (
+                image: image,
+                onSaved: {
                     Task {
                         await viewModel.loadDashboard(year: selectedYear)
                     }
+                },
+                onSuccess: { message in
+                    showSuccessToast(message ?? "")
                 }
+            )
+        }
+        #endif
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
             }
-            #if os(iOS)
-            // Sheet for camera
-            .sheet(isPresented: $showCamera) {
-                ImagePicker(image: $capturedImage, sourceType: .camera)
-            }
-            // Sheet for image treatment
-            .sheet(item: $capturedImage) { image in
-                ScanProcessingView (
-                    image: image,
-                    onSaved: {
-                        Task {
-                            await viewModel.loadDashboard(year: selectedYear)
-                        }
-                    },
-                    onSuccess: { message in
-                        showSuccessToast(message ?? "")
-                    }
-                )
-            }
-            #endif
-            .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") {
-                    viewModel.errorMessage = nil
-                }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
-//        }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     

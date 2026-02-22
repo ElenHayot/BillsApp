@@ -15,6 +15,9 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showUserForm = false
+    @FocusState private var focusedField: Field?
+    
+    enum Field { case email, password }
 
     var body: some View {
         NavigationStack() {
@@ -24,10 +27,26 @@ struct LoginView: View {
                     .font(.largeTitle)
                 
                 TextField("Email", text: $email)
+                    .focused($focusedField, equals: .email)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .password }
                     .textFieldStyle(.roundedBorder)
 
                 SecureField("Mot de passe", text: $password)
+                    .focused($focusedField, equals: .password)
+                    .submitLabel(.go)
+                    .onSubmit {
+                        guard !email.isEmpty && !password.isEmpty else { return }
+                        Task { await authVM.login(email: email, password: password) }
+                    }
                     .textFieldStyle(.roundedBorder)
+//                    .onChange(of: password) { _, newValue in
+//                        // Si les deux champs sont remplis (autofill Face ID vient de compléter)
+//                        guard !email.isEmpty && !newValue.isEmpty else { return }
+//                        Task {
+//                            await authVM.login(email: email, password: password)
+//                        }
+//                    }
 
                 if authVM.isLoading {
                     ProgressView()
@@ -57,6 +76,5 @@ struct LoginView: View {
                 UserFormView()
             }
         }
-        
     }
 }

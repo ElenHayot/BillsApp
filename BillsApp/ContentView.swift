@@ -15,7 +15,10 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            if authViewModel.isAuthenticated {
+            if authViewModel.isCheckingAuth {
+                SplashView()
+            }
+            else if authViewModel.isAuthenticated {
                 MainNavigationView(navigationPath: $navigationPath)
                 .sheet(isPresented: $showSettings) {
                     SettingsView()
